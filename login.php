@@ -1,6 +1,7 @@
 <?php
 session_start();
 
+// Reset session jika sebelumnya sudah ada login
 if (isset($_SESSION["id_pengguna"])) {
     session_unset();
     session_destroy();
@@ -8,56 +9,61 @@ if (isset($_SESSION["id_pengguna"])) {
 
 $pesan = "";
 
+// Fungsi sanitasi input
 function input($data)
 {
-    $data = trim($data);
-    $data = stripslashes($data);
-    $data = htmlspecialchars($data);
-    return $data;
+    return htmlspecialchars(stripslashes(trim($data)));
 }
 
+// Jika form disubmit
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     include "config/database.php";
-    $username = input($_POST["username"]);
-    $password = input(md5($_POST["password"]));
 
-    $tabel_admin = "SELECT * FROM tbl_user p
+    $username = input($_POST["username"]);
+    $password = md5(input($_POST["password"])); // langsung di-md5 tanpa input() dua kali
+
+    // ==================== Cek Admin ====================
+    $sql_admin = "SELECT * FROM tbl_user p
         INNER JOIN tbl_admin k ON k.kode_admin=p.kode_pengguna
         WHERE username=? AND password=? LIMIT 1";
-    $stmt_admin = $kon->prepare($tabel_admin);
+    $stmt_admin = $kon->prepare($sql_admin);
     $stmt_admin->bind_param("ss", $username, $password);
     $stmt_admin->execute();
     $result_admin = $stmt_admin->get_result();
 
-    $tabel_siswa = "SELECT * FROM tbl_user p
+    // ==================== Cek Siswa ====================
+    $sql_siswa = "SELECT * FROM tbl_user p
         INNER JOIN tbl_siswa m ON m.kode_siswa=p.kode_pengguna
         WHERE username=? AND password=? LIMIT 1";
-    $stmt_siswa = $kon->prepare($tabel_siswa);
+    $stmt_siswa = $kon->prepare($sql_siswa);
     $stmt_siswa->bind_param("ss", $username, $password);
     $stmt_siswa->execute();
     $result_siswa = $stmt_siswa->get_result();
 
+    // ==================== Login Berhasil ====================
     if ($result_admin->num_rows > 0) {
         $row = $result_admin->fetch_assoc();
-        $_SESSION["id_pengguna"] = $row["id_user"];
+        $_SESSION["id_pengguna"]  = $row["id_user"];
         $_SESSION["kode_pengguna"] = $row["kode_pengguna"];
-        $_SESSION["nama_admin"] = $row["nama"];
-        $_SESSION["username"] = $row["username"];
-        $_SESSION["level"] = $row["level"];
-        $_SESSION["nip"] = $row["nip"];
+        $_SESSION["nama_admin"]   = $row["nama"];
+        $_SESSION["username"]     = $row["username"];
+        $_SESSION["level"]        = $row["level"];
+        $_SESSION["nip"]          = $row["nip"];
+
         header("Location:index.php?page=beranda");
         exit;
-    } else if ($result_siswa->num_rows > 0) {
+    } elseif ($result_siswa->num_rows > 0) {
         $row = $result_siswa->fetch_assoc();
-        $_SESSION["id_pengguna"] = $row["id_user"];
+        $_SESSION["id_pengguna"]  = $row["id_user"];
         $_SESSION["kode_pengguna"] = $row["kode_pengguna"];
-        $_SESSION["id_siswa"] = $row["id_siswa"];
-        $_SESSION["nama_siswa"] = $row["nama"];
-        $_SESSION["username"] = $row["username"];
-        $_SESSION["perusahaan"] = $row["perusahaan"];
-        $_SESSION["level"] = $row["level"];
-        $_SESSION["foto"] = $row["foto"];
-        $_SESSION["nis"] = $row["nis"];
+        $_SESSION["id_siswa"]     = $row["id_siswa"];
+        $_SESSION["nama_siswa"]   = $row["nama"];
+        $_SESSION["username"]     = $row["username"];
+        $_SESSION["perusahaan"]   = $row["perusahaan"];
+        $_SESSION["level"]        = $row["level"];
+        $_SESSION["foto"]         = $row["foto"];
+        $_SESSION["nis"]          = $row["nis"];
+
         header("Location:index.php?page=beranda");
         exit;
     } else {
@@ -65,13 +71,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 }
 
+// ==================== Ambil Data Site ====================
 include 'config/database.php';
 $query = mysqli_query($kon, "SELECT * FROM tbl_site LIMIT 1");
 $row = mysqli_fetch_assoc($query);
 $nama_instansi = $row['nama_instansi'] ?? 'ABSENSI & KEGIATAN';
-$logo = $row['logo'] ?? 'logo.png';
+$logo          = $row['logo'] ?? 'logo.png';
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -106,7 +112,7 @@ $logo = $row['logo'] ?? 'logo.png';
             animation: fadeIn 1s ease-in-out;
         }
 
-        /* Logo kecil dan animasi pulse */
+        /* Logo dengan animasi */
         .logo {
             max-width: 80px;
             height: auto;
@@ -131,7 +137,7 @@ $logo = $row['logo'] ?? 'logo.png';
             }
         }
 
-        /* Fade in container */
+        /* Fade in */
         @keyframes fadeIn {
             from {
                 opacity: 0;
@@ -217,7 +223,7 @@ $logo = $row['logo'] ?? 'logo.png';
         </form>
 
         <div class="footer-text">
-            Created by All Team SMK TI BAZMA
+           © 2025 SMK TI BAZMA — Team IT
         </div>
     </div>
 

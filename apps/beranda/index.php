@@ -89,7 +89,10 @@ $row = mysqli_fetch_array($query);
     <div class="row mt-4">
         <div class="col-md-12">
             <div class="panel panel-default">
-                <div class="panel-heading"><i class="fa fa-building"></i> Dokumentasi Perusahaan PKL Mitra SMK TI BAZMA</div>
+                <div class="panel-heading"><i class="fa fa-building"></i> Dokumentasi Perusahaan PKL Mitra</div>
+                <div class="panel-subheading">
+                    SMK TI BAZMA
+                </div>
                 <div class="panel-body text-center">
                     <div class="running-gallery-wrapper">
                         <div class="running-gallery">
@@ -159,6 +162,19 @@ $row = mysqli_fetch_array($query);
         border-top-right-radius: 12px;
         text-align: center;
     }
+
+    .panel-subheading {
+        text-align: center;
+        font-size: 18px;
+        font-weight: 600;
+        color: #003a75;
+        margin: 4px 0 10px;
+        /* lebih rapat */
+        border-bottom: 1px solid #e6f0fa;
+        /* tipis biar elegan */
+        padding-bottom: 4px;
+    }
+
 
     .panel-body {
         background-color: #ffffff;

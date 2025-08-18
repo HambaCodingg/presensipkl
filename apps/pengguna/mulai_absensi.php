@@ -101,7 +101,7 @@ $data   = mysqli_fetch_assoc($result);
 $absensi_sudah = ($data['jml'] > 0) ? "disabled" : "";
 ?>
 
-<form action="apps/pengguna/kode_mulai_absensi.php" method="post" enctype="multipart/form-data">
+<form action="apps/pengguna/mulai_absensi.php" method="post" enctype="multipart/form-data">
     <div class="row">
         <div class="col-sm-6">
             <div class="form-group">
