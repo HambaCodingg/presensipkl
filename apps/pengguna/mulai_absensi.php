@@ -136,9 +136,21 @@ $absensi_sudah = ($data['jml'] > 0) ? "disabled" : "";
         <div class="col-sm-4">
             <div class="form-group">
                 <br>
-                <button type="submit" name="submit" id="tombol_hari" class="simpan_absensi btn btn-primary" <?php echo $absensi_sudah; ?>>
+                <button type="submit" name="submit" id="tombol_hari"
+                    class="simpan_absensi btn btn-primary"
+                    <?php echo $absensi_sudah; ?>>
                     <i class="fa fa-clock-o"></i> Absensi
                 </button>
+                <br>
+                <?php if ($absensi_sudah == "disabled") { ?>
+                    <small style="color: green;">
+                        👍 Anda sudah melakukan absensi hari ini
+                    </small>
+                <?php } else { ?>
+                    <small style="color: #555;">
+                        👉 Klik tombol di atas untuk melakukan absensi
+                    </small>
+                <?php } ?>
             </div>
         </div>
     </div>
@@ -175,7 +187,7 @@ $absensi_sudah = ($data['jml'] > 0) ? "disabled" : "";
     });
 
     // Konfirmasi sebelum absen
-    $('.simpan_absensi').on('click', function() {   
+    $('.simpan_absensi').on('click', function() {
         return confirm("Konfirmasi sebelum absen?");
     });
 </script>

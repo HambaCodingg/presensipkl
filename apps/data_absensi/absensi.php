@@ -20,19 +20,50 @@ if (isset($_POST['submit_absensi'])) {
         $waktu      = $_POST["waktu"];
         $alasan     = $_POST["alasan"];
 
+        // latitude & longitude dari form
+        $latitude   = $_POST["latitude"] ?? '';
+        $longitude  = $_POST["longitude"] ?? '';
+
+        // --- Proses upload foto ---
+        $foto = '';
+        if (!empty($_FILES['foto']['name'])) {
+            $namaFile  = time() . "_" . basename($_FILES['foto']['name']);
+            $targetDir = "../../uploads/absensi/";
+            $targetFile = $targetDir . $namaFile;
+
+            if (move_uploaded_file($_FILES['foto']['tmp_name'], $targetFile)) {
+                $foto = $namaFile;
+            }
+        }
+
+        // --- INSERT BARU ---
         if (empty($id_absensi)) {
-            $sql = "INSERT INTO tbl_absensi (id_siswa, status, tanggal, waktu)
-                    VALUES ('$id_siswa', '$status', '$tanggal', '$waktu')";
+            $sql = "INSERT INTO tbl_absensi (id_siswa, status, tanggal, waktu, foto, latitude, longitude)
+                    VALUES ('$id_siswa', '$status', '$tanggal', '$waktu', '$foto', '$latitude', '$longitude')";
         } else {
+            // --- UPDATE LAMA ---
+            // jika tidak upload foto baru, ambil foto lama
+            if (empty($foto)) {
+                $cek = mysqli_query($kon, "SELECT foto FROM tbl_absensi WHERE id_absensi='$id_absensi' LIMIT 1");
+                if ($cek && mysqli_num_rows($cek) > 0) {
+                    $row = mysqli_fetch_assoc($cek);
+                    $foto = $row['foto'];
+                }
+            }
+
             $sql = "UPDATE tbl_absensi SET 
-                        id_siswa = '$id_siswa', 
-                        status   = '$status', 
-                        tanggal  = '$tanggal', 
-                        waktu    = '$waktu' 
+                        id_siswa  = '$id_siswa', 
+                        status    = '$status', 
+                        tanggal   = '$tanggal', 
+                        waktu     = '$waktu',
+                        foto      = '$foto',
+                        latitude  = '$latitude',
+                        longitude = '$longitude'
                     WHERE id_absensi = '$id_absensi'";
         }
         $simpan_absensi = mysqli_query($kon, $sql);
 
+        // --- SIMPAN ALASAN ---
         if (empty($id_alasan)) {
             $sql = "INSERT INTO tbl_alasan (id_siswa, alasan, tanggal) 
                     VALUES ('$id_siswa', '$alasan', '$tanggal')";
@@ -58,6 +89,7 @@ if (isset($_POST['submit_absensi'])) {
         exit;
     }
 }
+
 
 // --------- TAMPIL DATA ----------
 $id_absensi = $_POST['id_absensi'] ?? '';
@@ -128,6 +160,9 @@ if (!empty($id_siswa) && !empty($tanggal)) {
             <input type="hidden" name="id_siswa" value="<?php echo htmlspecialchars($_POST['id_siswa'] ?? $id_siswa); ?>">
             <input type="hidden" name="id_absensi" value="<?php echo htmlspecialchars($_POST['id_absensi'] ?? $id_absensi); ?>">
             <input type="hidden" name="id_alasan" value="<?php echo htmlspecialchars($id_alasan); ?>">
+            <input type="file" name="foto" accept="image/*" class="form-control">
+            <input type="hidden" name="latitude" value="<?php echo $latitude; ?>">
+            <input type="hidden" name="longitude" value="<?php echo $longitude; ?>">
 
             <div class="form-group">
                 <label>Tanggal Presensi :</label>
@@ -169,8 +204,8 @@ if (!empty($id_siswa) && !empty($tanggal)) {
         <div class="col-sm-6">
             <label>Foto Presensi:</label><br>
             <?php if (!empty($foto)) {
-                // path relatif dari apps/data_absensi/absensi.php ke /uploads/absensi/
-                $imgPath = "../../uploads/absensi/" . rawurlencode($foto);
+                // path URL langsung (bisa diakses browser)
+                $imgPath = "uploads/absensi/" . rawurlencode($foto);
             ?>
                 <a href="<?php echo $imgPath; ?>" target="_blank" title="Klik untuk lihat ukuran penuh">
                     <img src="<?php echo $imgPath; ?>" alt="Foto Presensi"
@@ -179,6 +214,7 @@ if (!empty($id_siswa) && !empty($tanggal)) {
             <?php } else { ?>
                 <p><i>Tidak ada foto</i></p>
             <?php } ?>
+
         </div>
 
         <div class="col-sm-6">
