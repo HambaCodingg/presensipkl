@@ -170,12 +170,15 @@ if (!empty($id_siswa) && !empty($tanggal)) {
         <div class="col-sm-6">
             <div class="form-group">
                 <label>Status Presensi Asrama :</label>
-                <select class="form-control" id="status" name="status" required>
-                    <option value="0" <?php if ($status == 0 || $status === '') echo 'selected'; ?>>Pilih</option>
-                    <option value="1" <?php if ($status == 1) echo 'selected'; ?>>Hadir</option>
-                    <option value="2" <?php if ($status == 2) echo 'selected'; ?>>Izin</option>
-                    <option value="3" <?php if ($status == 3) echo 'selected'; ?>>Tidak Hadir</option>
-                </select>
+                <div class="select-wrap" style="position:relative;">
+                    <select class="form-control" id="status" name="status" required style="color:transparent;">
+                        <option value="" disabled <?php if ($status === '') echo 'selected'; ?>>Pilih</option>
+                        <option value="1" <?php if ($status == 1) echo 'selected'; ?>>Hadir</option>
+                        <option value="2" <?php if ($status == 2) echo 'selected'; ?>>Izin</option>
+                        <option value="3" <?php if ($status == 3) echo 'selected'; ?>>Tidak Hadir</option>
+                    </select>
+                    <span id="status-display" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none;color:#000;"><?php echo ($status === '' ? 'Pilih' : ($status == 1 ? 'Hadir' : ($status == 2 ? 'Izin' : 'Tidak Hadir'))); ?></span>
+                </div>
             </div>
         </div>
 
@@ -217,6 +220,11 @@ if (!empty($id_siswa) && !empty($tanggal)) {
 
 <script>
     $(document).ready(function() {
+        function updateStatusDisplay() {
+            var txt = $('#status option:selected').text() || 'Pilih';
+            $('#status-display').text(txt);
+        }
+        updateStatusDisplay();
         $("#status").change(function() {
             if ($(this).val() == "2") {
                 $("#text_alasan").show();
@@ -225,6 +233,7 @@ if (!empty($id_siswa) && !empty($tanggal)) {
                 $("#text_alasan").hide();
                 $("#alasan").attr("required", false);
             }
+            updateStatusDisplay();
         });
 
         if ($("#status").val() == "2") {

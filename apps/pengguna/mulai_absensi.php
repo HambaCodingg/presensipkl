@@ -116,17 +116,34 @@ $data   = mysqli_fetch_assoc($result);
 $absensi_sudah = ($data['jml'] > 0) ? "disabled" : "";
 ?>
 
+<style>
+    /* Force select visibility: placeholder grey, selected option black */
+    #absenForm #status {
+        color: #6c757d !important;
+        background-color: #fff !important;
+        -webkit-appearance: none !important;
+        appearance: none !important;
+    }
+
+    #absenForm #status option {
+        color: #000 !important;
+    }
+</style>
+
 <form id="absenForm" action="apps/pengguna/mulai_absensi.php" method="post" enctype="multipart/form-data">
     <div class="row">
         <div class="col-sm-6">
             <div class="form-group">
                 <label>Status :</label>
-                <select class="form-control" id="status" name="status" required>
-                    <option value="">Pilih</option>
-                    <option value="1">Hadir</option>
-                    <option value="2">Izin</option>
-                    <option value="3">Tidak Hadir</option>
-                </select>
+                <div class="select-wrap" style="position:relative;">
+                    <select class="form-control" id="status" name="status" required style="color:transparent;">
+                        <option value="" disabled selected>Pilih</option>
+                        <option value="1">Hadir</option>
+                        <option value="2">Izin</option>
+                        <option value="3">Tidak Hadir</option>
+                    </select>
+                    <span id="status-display" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none;color:#000;">Pilih</span>
+                </div>
             </div>
         </div>
         <div class="col-sm-6" id="text_alasan" style="display:none;">
@@ -188,7 +205,13 @@ $absensi_sudah = ($data['jml'] > 0) ? "disabled" : "";
     $(document).ready(function() {
         // Tampilkan alasan jika status = izin
         // Atur warna teks select: placeholder abu, setelah pilih jadi hitam
-        $('#status').css('color', $('#status').val() === '' ? '#6c757d' : '#000');
+        $('#status').css('color', $('#status').val() === '' ? 'transparent' : 'transparent');
+        // initialize overlay text
+        function updateStatusDisplay() {
+            var txt = $('#status option:selected').text() || 'Pilih';
+            $('#status-display').text(txt);
+        }
+        updateStatusDisplay();
         $("#status").change(function() {
             if ($(this).val() == "2") {
                 $("#text_alasan").show();
@@ -197,7 +220,7 @@ $absensi_sudah = ($data['jml'] > 0) ? "disabled" : "";
                 $("#text_alasan").hide();
                 $("#alasan").attr("required", false);
             }
-            $(this).css('color', $(this).val() === '' ? '#6c757d' : '#000');
+            updateStatusDisplay();
         });
 
         // Disable tombol di hari Sabtu / Minggu
@@ -228,7 +251,12 @@ $absensi_sudah = ($data['jml'] > 0) ? "disabled" : "";
 
         function startCamera() {
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
-            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false })
+            navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: 'user'
+                    },
+                    audio: false
+                })
                 .then(function(stream) {
                     video.srcObject = stream;
                     video.play();
@@ -263,7 +291,10 @@ $absensi_sudah = ($data['jml'] > 0) ? "disabled" : "";
 
         // intercept form submit, build FormData and send via fetch
         document.getElementById('absenForm').addEventListener('submit', function(ev) {
-            if (!confirm('Konfirmasi sebelum absen?')) { ev.preventDefault(); return; }
+            if (!confirm('Konfirmasi sebelum absen?')) {
+                ev.preventDefault();
+                return;
+            }
             ev.preventDefault();
             var form = this;
             var fd = new FormData(form);

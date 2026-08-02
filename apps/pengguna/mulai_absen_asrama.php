@@ -76,12 +76,15 @@ $absensi_sudah = ($data['jml'] > 0) ? "disabled" : "";
         <div class="col-sm-6">
             <div class="form-group">
                 <label>Status :</label>
-                <select class="form-control" id="status" name="status" required>
-                    <option value="">Pilih</option>
-                    <option value="1">Hadir</option>
-                    <option value="2">Izin</option>
-                    <option value="3">Tidak Hadir</option>
-                </select>
+                <div class="select-wrap" style="position:relative;">
+                    <select class="form-control" id="status" name="status" required style="color:transparent;">
+                        <option value="" disabled selected>Pilih</option>
+                        <option value="1">Hadir</option>
+                        <option value="2">Izin</option>
+                        <option value="3">Tidak Hadir</option>
+                    </select>
+                    <span id="status-display" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none;color:#000;">Pilih</span>
+                </div>
             </div>
         </div>
         <div class="col-sm-6" id="text_alasan" style="display:none;">
@@ -120,6 +123,11 @@ $absensi_sudah = ($data['jml'] > 0) ? "disabled" : "";
 
 <script>
     $(document).ready(function() {
+        function updateStatusDisplay() {
+            var txt = $('#status option:selected').text() || 'Pilih';
+            $('#status-display').text(txt);
+        }
+        updateStatusDisplay();
         $("#status").change(function() {
             if ($(this).val() == "2") {
                 $("#text_alasan").show();
@@ -128,6 +136,7 @@ $absensi_sudah = ($data['jml'] > 0) ? "disabled" : "";
                 $("#text_alasan").hide();
                 $("#alasan").attr("required", false);
             }
+            updateStatusDisplay();
         });
 
         if (navigator.geolocation) {
