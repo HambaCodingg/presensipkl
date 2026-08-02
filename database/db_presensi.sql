@@ -150,9 +150,6 @@ CREATE TABLE `tbl_absen_asrama` (
 -- Dumping data untuk tabel `tbl_absen_asrama`
 --
 
-INSERT INTO `tbl_absen_asrama` (`id_absen_asrama`, `id_siswa`, `status`, `foto`, `latitude`, `longitude`, `waktu`, `tanggal`) VALUES
-;
-
 -- --------------------------------------------------------
 
 --
@@ -170,9 +167,6 @@ CREATE TABLE `tbl_alasan_asrama` (
 --
 -- Dumping data untuk tabel `tbl_alasan_asrama`
 --
-
-INSERT INTO `tbl_alasan_asrama` (`id_alasan_asrama`, `id_siswa`, `alasan`, `tanggal`) VALUES
-;
 
 -- --------------------------------------------------------
 
