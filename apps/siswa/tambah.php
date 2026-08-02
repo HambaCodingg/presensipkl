@@ -40,15 +40,39 @@ if (isset($_POST['tambah_siswa'])) {
 
         // ================== Upload Foto ==================
         $ekstensi_diperbolehkan = array('png', 'jpg', 'jpeg', 'gif');
-        $foto = $_FILES['foto']['name'];
-        $x = explode('.', $foto);
-        $ekstensi = strtolower(end($x));
-        $ukuran   = $_FILES['foto']['size'];
-        $file_tmp = $_FILES['foto']['tmp_name'];
+        $foto = $_FILES['foto']['name'] ?? '';
+        $file_tmp = $_FILES['foto']['tmp_name'] ?? '';
+        $file_error = $_FILES['foto']['error'] ?? UPLOAD_ERR_NO_FILE;
 
-        if (!empty($foto) && in_array($ekstensi, $ekstensi_diperbolehkan) === true) {
-            move_uploaded_file($file_tmp, 'foto/' . $foto);
+        // prepare log dir
+        $log_dir = __DIR__ . '/logs/';
+        if (!is_dir($log_dir)) {@mkdir($log_dir, 0755, true);} 
+        $dbg_file = $log_dir . 'tambah_siswa_upload.log';
+
+        if (!empty($foto) && $file_error === UPLOAD_ERR_OK && is_uploaded_file($file_tmp)) {
+            $x = explode('.', $foto);
+            $ekstensi = strtolower(end($x));
+            if (!in_array($ekstensi, $ekstensi_diperbolehkan)) {
+                @file_put_contents($dbg_file, date('Y-m-d H:i:s') . " | invalid extension: $foto\n", FILE_APPEND | LOCK_EX);
+                $foto = "foto_default.png";
+            } else {
+                $upload_dir = __DIR__ . '/foto/';
+                if (!is_dir($upload_dir)) { mkdir($upload_dir, 0755, true); }
+                $safe_name = preg_replace('/[^A-Za-z0-9._-]/', '_', basename($foto));
+                $foto_unik = time() . '_' . $safe_name;
+                $dest = $upload_dir . $foto_unik;
+                if (move_uploaded_file($file_tmp, $dest)) {
+                    $foto = $foto_unik;
+                } else {
+                    @file_put_contents($dbg_file, date('Y-m-d H:i:s') . " | move_uploaded_file failed for: $foto\n", FILE_APPEND | LOCK_EX);
+                    $foto = "foto_default.png";
+                }
+            }
         } else {
+            // no file uploaded or error
+            if ($file_error !== UPLOAD_ERR_NO_FILE) {
+                @file_put_contents($dbg_file, date('Y-m-d H:i:s') . " | upload error code: $file_error\n", FILE_APPEND | LOCK_EX);
+            }
             $foto = "foto_default.png";
         }
 
