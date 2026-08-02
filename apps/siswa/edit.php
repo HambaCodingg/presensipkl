@@ -101,8 +101,19 @@ if (isset($_POST['edit_siswa'])) {
             header("Location:../../index.php?page=siswa&edit=berhasil");
             exit;
         } else {
+            $sql_error = mysqli_error($kon);
             mysqli_query($kon, "ROLLBACK");
-            header("Location:../../index.php?page=siswa&edit=gagal");
+
+            // Pastikan folder log ada
+            $log_dir = __DIR__ . '/logs/';
+            if (!is_dir($log_dir)) {
+                @mkdir($log_dir, 0755, true);
+            }
+            $log_file = $log_dir . 'edit_siswa_errors.log';
+            $message = date('Y-m-d H:i:s') . " | id_siswa={$id_siswa} | error=" . $sql_error . " | sql=" . str_replace("\n", ' ', $sql) . "\n";
+            @file_put_contents($log_file, $message, FILE_APPEND | LOCK_EX);
+
+            header("Location:../../index.php?page=siswa&edit=gagal_sql");
             exit;
         }
     }
