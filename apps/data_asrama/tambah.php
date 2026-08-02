@@ -23,7 +23,7 @@ if (isset($_POST['simpan_absensi'])) {
 
         if (mysqli_num_rows($result) == 0) {
             $sql = "INSERT INTO tbl_absen_asrama (id_siswa,status,waktu,tanggal) VALUES 
-            ('$id_siswa',$status,'$waktu','$tanggal')";
+            ('$id_siswa','$status','$waktu','$tanggal')";
             $simpan_absensi = mysqli_query($kon, $sql);
         } else {
             $simpan_absensi = true;
@@ -69,7 +69,7 @@ if (isset($_POST['simpan_absensi'])) {
             <div class="form-group">
                 <label>Status :</label>
                 <select class="form-control" id="status" name="status" required>
-                    <option>Pilih</option>
+                    <option value="">Pilih</option>
                     <option value="1">Hadir</option>
                     <option value="2">Izin</option>
                     <option value="3">Tidak Hadir</option>

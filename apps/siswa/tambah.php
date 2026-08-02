@@ -2,6 +2,24 @@
 session_start();
 if (isset($_POST['tambah_siswa'])) {
 
+    // Early debug dump to capture POST/FILES and PHP upload settings
+    $early_log_dir = __DIR__ . '/logs/';
+    if (!is_dir($early_log_dir)) {
+        @mkdir($early_log_dir, 0755, true);
+    }
+    $early_log = $early_log_dir . 'tambah_siswa_debug.log';
+    $info = [
+        'time' => date('Y-m-d H:i:s'),
+        'post_keys' => array_keys($_POST),
+        'files_keys' => array_keys($_FILES),
+        'files_dump' => $_FILES,
+        'post_dump' => $_POST,
+        'upload_max_filesize' => ini_get('upload_max_filesize'),
+        'post_max_size' => ini_get('post_max_size'),
+        'file_uploads' => ini_get('file_uploads')
+    ];
+    @file_put_contents($early_log, var_export($info, true) . "\n", FILE_APPEND | LOCK_EX);
+
     include '../../config/database.php';
 
     // Fungsi filter input
@@ -46,7 +64,9 @@ if (isset($_POST['tambah_siswa'])) {
 
         // prepare log dir
         $log_dir = __DIR__ . '/logs/';
-        if (!is_dir($log_dir)) {@mkdir($log_dir, 0755, true);} 
+        if (!is_dir($log_dir)) {
+            @mkdir($log_dir, 0755, true);
+        }
         $dbg_file = $log_dir . 'tambah_siswa_upload.log';
 
         if (!empty($foto) && $file_error === UPLOAD_ERR_OK && is_uploaded_file($file_tmp)) {
@@ -57,7 +77,9 @@ if (isset($_POST['tambah_siswa'])) {
                 $foto = "foto_default.png";
             } else {
                 $upload_dir = __DIR__ . '/foto/';
-                if (!is_dir($upload_dir)) { mkdir($upload_dir, 0755, true); }
+                if (!is_dir($upload_dir)) {
+                    mkdir($upload_dir, 0755, true);
+                }
                 $safe_name = preg_replace('/[^A-Za-z0-9._-]/', '_', basename($foto));
                 $foto_unik = time() . '_' . $safe_name;
                 $dest = $upload_dir . $foto_unik;

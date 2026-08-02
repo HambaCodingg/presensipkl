@@ -24,18 +24,21 @@ if (isset($_POST['simpan_absensi'])) {
         $result = mysqli_query($kon, $query);
 
         if (mysqli_num_rows($result) > 0) {
+            $simpan_absensi = true;
         } else {
             // Menambahkan data ke tabel absensi
             $sql = "INSERT INTO tbl_absensi (id_siswa,status,waktu,tanggal) VALUES 
-            ('$id_siswa',$status,'$waktu','$tanggal')";
+            ('$id_siswa','$status','$waktu','$tanggal')";
             $simpan_absensi = mysqli_query($kon, $sql);
         }
 
 
-        if ($status == "2" and mysqli_num_rows($result) > 0) {
+        if ($status == "2") {
             $sql = "INSERT INTO tbl_alasan (id_siswa,alasan,tanggal) VALUES 
             ('$id_siswa', '$alasan', '$tanggal')";
             $simpan_izin = mysqli_query($kon, $sql);
+        } else {
+            $simpan_izin = true;
         }
 
 
@@ -76,7 +79,7 @@ if (isset($_POST['simpan_absensi'])) {
             <div class="form-group">
                 <label>Status :</label>
                 <select class="form-control" id="status" name="status" required>
-                    <option>Pilih</option>
+                    <option value="">Pilih</option>
                     <option value="1">Hadir</option>
                     <option value="2">Izin</option>
                     <option value="3">Tidak Hadir</option>
