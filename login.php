@@ -64,7 +64,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $_SESSION["foto"]         = $row["foto"];
         $_SESSION["nis"]          = $row["nis"];
 
-        header("Location:index.php?page=beranda");
+        header("Location:index.php?page=verify_lokasi");
         exit;
     } else {
         $pesan = "<div class='alert alert-danger'>Username atau Password salah.</div>";

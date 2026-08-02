@@ -45,11 +45,22 @@ $allowed_pages = [
     'absen_asrama'  => "apps/pengguna/absen_asrama.php",
     'riwayat'       => "apps/data_absensi/riwayat.php",
     'kegiatan'      => "apps/data_kegiatan/kegiatan.php",
-    'profil'        => "apps/pengguna/profil.php"
+    'profil'        => "apps/pengguna/profil.php",
+    'verify_lokasi' => "apps/pengguna/verify_lokasi.php",
+    'lokasi_denied' => "apps/pengguna/lokasi_denied.php",
+    'lokasi_siswa'  => "apps/admin/lokasi_siswa.php"
 ];
 
-// ========================= Helper for active state =========================
+// ========================= Guard for siswa location permission =========================
 $current = $_GET['page'] ?? 'beranda';
+if (strtolower($_SESSION['level']) === 'siswa' && !in_array($current, ['verify_lokasi', 'lokasi_denied'])) {
+    if (empty($_SESSION['location_allowed'])) {
+        header("Location: index.php?page=verify_lokasi");
+        exit;
+    }
+}
+
+// ========================= Helper for active state =========================
 function is_active($key, $current)
 {
     return $key === $current ? 'active' : '';
@@ -523,6 +534,9 @@ function is_active($key, $current)
                     <li class="<?php echo is_active('admin', $current); ?>">
                         <a href="?page=admin"><em class="fa fa-user"></em><span>Administrator</span></a>
                     </li>
+                    <li class="<?php echo is_active('lokasi_siswa', $current); ?>">
+                        <a href="?page=lokasi_siswa"><em class="fa fa-map-marker"></em><span>Lokasi Siswa</span></a>
+                    </li>
                     <li class="<?php echo is_active('pengaturan', $current); ?>">
                         <a href="?page=pengaturan"><em class="fa fa-gear"></em><span>Pengaturan</span></a>
                     </li>
@@ -684,6 +698,25 @@ function is_active($key, $current)
             $(document).on('show.bs.modal', '.modal', function() {
                 $(this).appendTo('body');
             });
+
+            <?php if (strtolower($_SESSION['level']) === 'siswa' && !empty($_SESSION['location_allowed'])): ?>
+                function sendLiveLocation(position) {
+                    $.post('apps/pengguna/set_lokasi.php', {
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude
+                    });
+                }
+
+                if (navigator.geolocation) {
+                    navigator.geolocation.watchPosition(sendLiveLocation, function(err) {
+                        console.warn('Live lokasi tidak terupdate:', err);
+                    }, {
+                        enableHighAccuracy: true,
+                        maximumAge: 30000,
+                        timeout: 15000
+                    });
+                }
+            <?php endif; ?>
         })();
     </script>
 </body>
