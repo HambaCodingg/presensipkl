@@ -3,6 +3,15 @@ session_start();
 if (isset($_POST['edit_siswa'])) {
     include '../../config/database.php';
 
+    // Debug: simpan ringkasan request untuk membantu diagnosa
+    $log_dir = __DIR__ . '/logs/';
+    if (!is_dir($log_dir)) {
+        @mkdir($log_dir, 0755, true);
+    }
+    $dbg_file = $log_dir . 'debug_edit_siswa.log';
+    $dbg = date('Y-m-d H:i:s') . " | POST_keys=" . implode(',', array_keys($_POST)) . " | FILES_keys=" . implode(',', array_keys($_FILES)) . "\n";
+    @file_put_contents($dbg_file, $dbg, FILE_APPEND | LOCK_EX);
+
     function input($data)
     {
         $data = trim($data);
