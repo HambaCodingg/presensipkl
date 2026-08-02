@@ -151,6 +151,71 @@ function EditAbsensi($id_absensi)
     return $sql;
 }
 
+function AbsensiAsramaOtomatis($sql)
+{
+    include 'database.php';
+    $sql = "SELECT tbl_siswa.id_siswa, tbl_siswa.nama, tbl_siswa.perusahaan,
+        tbl_absen_asrama.id_absen_asrama,
+        (CASE
+            WHEN tbl_absen_asrama.status IS NULL THEN 'Belum Absensi'
+            WHEN tbl_absen_asrama.status = 1 THEN 'Hadir'
+            WHEN tbl_absen_asrama.status = 2 THEN 'Izin'
+        ELSE 'Tidak Hadir' END) AS status,
+        (CASE
+            WHEN tbl_absen_asrama.waktu IS NULL THEN 'Belum'
+            ELSE tbl_absen_asrama.waktu END) AS waktu,
+        DATE_FORMAT(CURDATE(), '%W') AS hari,
+        DATE_FORMAT(CURDATE(), '%Y-%m-%d') AS tanggal
+        FROM tbl_siswa LEFT JOIN tbl_absen_asrama ON 
+            tbl_absen_asrama.id_siswa = tbl_siswa.id_siswa 
+        AND tbl_absen_asrama.tanggal = CURDATE()
+        ORDER BY tbl_siswa.nama ASC;";
+    return $sql;
+}
+
+function PencarianAbsensiAsrama($nama, $tanggal_awal, $tanggal_akhir)
+{
+    include 'database.php';
+    $sql = "SELECT tbl_absen_asrama.id_absen_asrama, tbl_absen_asrama.id_siswa,
+    COALESCE(CASE tbl_absen_asrama.status 
+        WHEN 1 THEN 'Hadir' 
+        WHEN 2 THEN 'Izin' 
+    ELSE 'Tidak Hadir' END) as status,
+    DATE_FORMAT(tbl_absen_asrama.tanggal, '%W') AS hari, 
+        tbl_absen_asrama.tanggal, 
+        tbl_absen_asrama.waktu, tbl_siswa.nama, tbl_siswa.perusahaan 
+    FROM tbl_siswa LEFT JOIN tbl_absen_asrama 
+        ON tbl_absen_asrama.id_siswa = tbl_siswa.id_siswa 
+    WHERE tbl_siswa.nama LIKE '%$nama%' AND
+        tbl_absen_asrama.tanggal >= '$tanggal_awal' AND
+        tbl_absen_asrama.tanggal <= '$tanggal_akhir'
+    ORDER BY tbl_absen_asrama.tanggal DESC;";
+    return $sql;
+}
+
+function EditAbsensiAsrama($id_absen_asrama)
+{
+    $id_absen_asrama = intval($id_absen_asrama); // keamanan sederhana
+    $sql = "
+        SELECT 
+            a.id_absen_asrama,
+            a.id_siswa,
+            a.status,
+            a.waktu,
+            a.tanggal,
+            a.foto,
+            a.latitude,
+            a.longitude,
+            COALESCE(al.tanggal, a.tanggal) AS tanggal_alasan
+        FROM tbl_absen_asrama a
+        LEFT JOIN tbl_alasan_asrama al ON a.id_absen_asrama = al.id_alasan_asrama
+        WHERE (a.tanggal = al.tanggal OR al.tanggal IS NULL)
+          AND a.id_absen_asrama = '$id_absen_asrama'
+        LIMIT 1
+    ";
+    return $sql;
+}
+
 ?>
 
 <?php

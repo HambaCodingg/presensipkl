@@ -38,9 +38,11 @@ $allowed_pages = [
     'admin'         => "apps/admin/index.php",
     'siswa'         => "apps/siswa/index.php",
     'data_absensi'  => "apps/data_absensi/index.php",
+    'data_asrama'   => "apps/data_asrama/index.php",
     'data_kegiatan' => "apps/data_kegiatan/index.php",
     'pengaturan'    => "apps/pengaturan/index.php",
     'absen'         => "apps/pengguna/absen.php",
+    'absen_asrama'  => "apps/pengguna/absen_asrama.php",
     'riwayat'       => "apps/data_absensi/riwayat.php",
     'kegiatan'      => "apps/data_kegiatan/kegiatan.php",
     'profil'        => "apps/pengguna/profil.php"
@@ -68,8 +70,7 @@ function is_active($key, $current)
     <link href="template/css/font-awesome.min.css" rel="stylesheet" />
     <link href="template/css/datepicker3.css" rel="stylesheet" />
     <link href="template/css/styles.css" rel="stylesheet" />
-    <link href="assets/css/jquery-ui.css" rel="stylesheet" />
-    <link href="src/font/font.css" rel="stylesheet" />
+    <link href="source/font/font.css" rel="stylesheet" />
 
     <!-- ============ jQuery (must be before Bootstrap) ============ -->
     <script src="template/js/jquery-2.2.3.min.js"></script>
@@ -114,7 +115,7 @@ function is_active($key, $current)
             position: fixed;
             inset: 0;
             z-index: 9999;
-            background: #fff url('loading.gif') center no-repeat;
+            background: #fff;
         }
 
         /* ----------------------------------------------
@@ -428,6 +429,9 @@ function is_active($key, $current)
                     <li class="<?php echo is_active('data_absensi', $current); ?>">
                         <a href="?page=data_absensi"><em class="fa fa-calendar"></em><span>Data Presensi</span></a>
                     </li>
+                    <li class="<?php echo is_active('data_asrama', $current); ?>">
+                        <a href="?page=data_asrama"><em class="fa fa-bed"></em><span>Data Presensi Asrama</span></a>
+                    </li>
                     <li class="<?php echo is_active('data_kegiatan', $current); ?>">
                         <a href="?page=data_kegiatan"><em class="fa fa-book"></em><span>Jurnal Kegiatan</span></a>
                     </li>
@@ -439,7 +443,10 @@ function is_active($key, $current)
                     </li>
                 <?php elseif (strtolower($_SESSION['level']) === 'siswa'): ?>
                     <li class="<?php echo is_active('absen', $current); ?>">
-                        <a href="?page=absen"><em class="fa fa-calendar-check-o"></em><span>Presensi</span></a>
+                        <a href="?page=absen"><em class="fa fa-calendar-check-o"></em><span>Presensi PKL</span></a>
+                    </li>
+                    <li class="<?php echo is_active('absen_asrama', $current); ?>">
+                        <a href="?page=absen_asrama"><em class="fa fa-bed"></em><span>Presensi Asrama</span></a>
                     </li>
                     <li class="<?php echo is_active('riwayat', $current); ?>">
                         <a href="?page=riwayat"><em class="fa fa-history"></em><span>Riwayat Presensi</span></a>

@@ -8,6 +8,7 @@ if ($_SESSION["level"] != 'Siswa' and $_SESSION["level"] != 'Siswa') {
 <?php
 // Mengambil data dari sessi login
 include 'config/database.php';
+include 'config/function.php';
 $id_siswa = $_SESSION["id_siswa"];
 $sql = "select * from tbl_siswa where id_siswa=$id_siswa limit 1";
 $hasil = mysqli_query($kon, $sql);
@@ -22,8 +23,8 @@ $foto = $data['foto'];
 // Mengubah format tanggal ke bahasa Indonesia
 setlocale(LC_TIME, 'id_ID');
 $tanggal_sekarang = new DateTime();
-$tanggal_masuk = strftime("%d %B %Y", strtotime($mulai_pkl));
-$tanggal_keluar = strftime("%d %B %Y", strtotime($akhir_pkl));
+$tanggal_masuk = date("d", strtotime($mulai_pkl)) . ' ' . MendapatkanBulan(date("m", strtotime($mulai_pkl))) . ' ' . date("Y", strtotime($mulai_pkl));
+$tanggal_keluar = date("d", strtotime($akhir_pkl)) . ' ' . MendapatkanBulan(date("m", strtotime($akhir_pkl))) . ' ' . date("Y", strtotime($akhir_pkl));
 ?>
 
 <?php
@@ -83,7 +84,6 @@ $akhir_absen = $setting['akhir_absen'];
                                 <td>Tanggal</td>
                                 <td width="80%">:
                                     <?php
-                                    include 'config/function.php';
                                     $tanggal_sekarang = date("d-m-Y");
                                     $tgl = date("d", strtotime($tanggal_sekarang));
                                     $bulan = date("m", strtotime($tanggal_sekarang));

@@ -131,6 +131,52 @@ INSERT INTO `tbl_alasan` (`id_alasan`, `id_siswa`, `alasan`, `tanggal`) VALUES
 -- --------------------------------------------------------
 
 --
+-- Struktur dari tabel `tbl_absen_asrama`
+--
+
+CREATE TABLE `tbl_absen_asrama` (
+  `id_absen_asrama` int(15) NOT NULL AUTO_INCREMENT,
+  `id_siswa` int(15) DEFAULT NULL,
+  `status` int(15) DEFAULT NULL,
+  `foto` varchar(255) DEFAULT NULL,
+  `latitude` varchar(50) DEFAULT NULL,
+  `longitude` varchar(50) DEFAULT NULL,
+  `waktu` time DEFAULT NULL,
+  `tanggal` date DEFAULT NULL,
+  PRIMARY KEY (`id_absen_asrama`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data untuk tabel `tbl_absen_asrama`
+--
+
+INSERT INTO `tbl_absen_asrama` (`id_absen_asrama`, `id_siswa`, `status`, `foto`, `latitude`, `longitude`, `waktu`, `tanggal`) VALUES
+;
+
+-- --------------------------------------------------------
+
+--
+-- Struktur dari tabel `tbl_alasan_asrama`
+--
+
+CREATE TABLE `tbl_alasan_asrama` (
+  `id_alasan_asrama` int(15) NOT NULL AUTO_INCREMENT,
+  `id_siswa` int(15) DEFAULT NULL,
+  `alasan` varchar(255) DEFAULT NULL,
+  `tanggal` date DEFAULT NULL,
+  PRIMARY KEY (`id_alasan_asrama`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data untuk tabel `tbl_alasan_asrama`
+--
+
+INSERT INTO `tbl_alasan_asrama` (`id_alasan_asrama`, `id_siswa`, `alasan`, `tanggal`) VALUES
+;
+
+-- --------------------------------------------------------
+
+--
 -- Struktur dari tabel `tbl_kegiatan`
 --
 
@@ -390,6 +436,18 @@ ALTER TABLE `tbl_kegiatan`
   MODIFY `id_kegiatan` int(15) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=174;
 
 --
+-- AUTO_INCREMENT untuk tabel `tbl_absen_asrama`
+--
+ALTER TABLE `tbl_absen_asrama`
+  MODIFY `id_absen_asrama` int(15) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1;
+
+--
+-- AUTO_INCREMENT untuk tabel `tbl_alasan_asrama`
+--
+ALTER TABLE `tbl_alasan_asrama`
+  MODIFY `id_alasan_asrama` int(15) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1;
+
+--
 -- AUTO_INCREMENT untuk tabel `tbl_siswa`
 --
 ALTER TABLE `tbl_siswa`
@@ -428,6 +486,18 @@ ALTER TABLE `tbl_alasan`
 --
 ALTER TABLE `tbl_kegiatan`
   ADD CONSTRAINT `tbl_kegiatan_ibfk1_1` FOREIGN KEY (`id_siswa`) REFERENCES `tbl_siswa` (`id_siswa`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Ketidakleluasaan untuk tabel `tbl_absen_asrama`
+--
+ALTER TABLE `tbl_absen_asrama`
+  ADD CONSTRAINT `tbl_absen_asrama_ibfk1_1` FOREIGN KEY (`id_siswa`) REFERENCES `tbl_siswa` (`id_siswa`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Ketidakleluasaan untuk tabel `tbl_alasan_asrama`
+--
+ALTER TABLE `tbl_alasan_asrama`
+  ADD CONSTRAINT `tbl_alasan_asrama_ibfk1_1` FOREIGN KEY (`id_siswa`) REFERENCES `tbl_siswa` (`id_siswa`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Ketidakleluasaan untuk tabel `tbl_siswa`
