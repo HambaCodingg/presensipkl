@@ -89,14 +89,18 @@ if (isset($_POST['submit'])) {
         if ($simpan_absensi && $simpan_izin) {
             mysqli_query($kon, "COMMIT");
             if ($is_ajax) {
+                header('Content-Type: application/json');
                 echo json_encode(['status' => 'ok', 'redirect' => '../../index.php?page=absen&mulai=berhasil']);
+                exit;
             } else {
                 header("Location:../../index.php?page=absen&mulai=berhasil");
             }
         } else {
             mysqli_query($kon, "ROLLBACK");
             if ($is_ajax) {
+                header('Content-Type: application/json');
                 echo json_encode(['status' => 'error', 'redirect' => '../../index.php?page=absen&mulai=gagal']);
+                exit;
             } else {
                 header("Location:../../index.php?page=absen&mulai=gagal");
             }
@@ -127,6 +131,30 @@ $absensi_sudah = ($data['jml'] > 0) ? "disabled" : "";
 
     #absenForm #status option {
         color: #000 !important;
+    }
+
+    /* Ensure submit button is above camera area and clickable */
+    #camera-area {
+        position: relative;
+        z-index: 1;
+    }
+
+    #tombol_hari,
+    .simpan_absensi {
+        position: relative;
+        z-index: 9999;
+        pointer-events: auto;
+    }
+
+    /* Force cursor and pointer to ensure not-allowed isn't shown */
+    #tombol_hari,
+    .simpan_absensi {
+        cursor: pointer !important;
+    }
+
+    #tombol_hari:disabled,
+    .simpan_absensi[disabled] {
+        cursor: not-allowed !important;
     }
 </style>
 
@@ -298,6 +326,7 @@ $absensi_sudah = ($data['jml'] > 0) ? "disabled" : "";
             ev.preventDefault();
             var form = this;
             var fd = new FormData(form);
+            fd.set('submit', 'submit');
 
             // require capturedBlob (no file input fallback)
             if (capturedBlob) {
@@ -316,7 +345,14 @@ $absensi_sudah = ($data['jml'] > 0) ? "disabled" : "";
                 },
                 credentials: 'same-origin'
             }).then(function(resp) {
-                return resp.json();
+                return resp.text().then(function(text) {
+                    try {
+                        return JSON.parse(text);
+                    } catch (e) {
+                        console.error('Response is not valid JSON:', text);
+                        throw new Error('Server returned invalid JSON');
+                    }
+                });
             }).then(function(json) {
                 if (json && json.redirect) {
                     window.location = json.redirect;
