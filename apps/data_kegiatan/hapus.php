@@ -1,5 +1,9 @@
 <?php
 session_start();
+if (!isset($_SESSION["level"]) || (strtolower($_SESSION["level"]) !== 'admin')) {
+    echo "<br><div class='alert alert-danger'>Tidak Memiliki Hak Akses</div>";
+    exit;
+}
 include '../../config/database.php';
 mysqli_query($kon, "START TRANSACTION");
 

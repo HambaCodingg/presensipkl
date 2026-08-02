@@ -1,5 +1,9 @@
 <?php
 session_start();
+if (!isset($_SESSION["level"]) || (strtolower($_SESSION["level"]) !== 'admin')) {
+    echo "<br><div class='alert alert-danger'>Tidak Memiliki Hak Akses</div>";
+    exit;
+}
 if (isset($_POST['edit_kegiatan'])) {
     include '../../config/database.php';
 
