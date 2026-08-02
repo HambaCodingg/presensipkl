@@ -21,8 +21,11 @@ if (isset($_POST['submit'])) {
     if ($_SERVER["REQUEST_METHOD"] == "POST") {
         mysqli_query($kon, "START TRANSACTION");
 
-        // Upload foto absensi
+        // Upload foto absensi (support normal file upload or blob sent via AJAX)
         $foto_baru = null;
+        $is_ajax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest';
+
+        // If PHP received a file in $_FILES (standard upload)
         if (!empty($_FILES['foto']['name'])) {
             $ext = strtolower(pathinfo($_FILES['foto']['name'], PATHINFO_EXTENSION));
             $foto_baru = date("Ymd_His") . "_{$id_siswa}." . $ext;
@@ -34,7 +37,11 @@ if (isset($_POST['submit'])) {
 
             if (!move_uploaded_file($_FILES['foto']['tmp_name'], $upload_dir . $foto_baru)) {
                 mysqli_query($kon, "ROLLBACK");
-                header("Location:../../index.php?page=absen&mulai=gagal_upload");
+                if ($is_ajax) {
+                    echo json_encode(['status' => 'error', 'message' => 'Gagal mengunggah foto']);
+                } else {
+                    header("Location:../../index.php?page=absen&mulai=gagal_upload");
+                }
                 exit;
             }
         }
@@ -81,10 +88,18 @@ if (isset($_POST['submit'])) {
         // Commit / Rollback transaksi
         if ($simpan_absensi && $simpan_izin) {
             mysqli_query($kon, "COMMIT");
-            header("Location:../../index.php?page=absen&mulai=berhasil");
+            if ($is_ajax) {
+                echo json_encode(['status' => 'ok', 'redirect' => '../../index.php?page=absen&mulai=berhasil']);
+            } else {
+                header("Location:../../index.php?page=absen&mulai=berhasil");
+            }
         } else {
             mysqli_query($kon, "ROLLBACK");
-            header("Location:../../index.php?page=absen&mulai=gagal");
+            if ($is_ajax) {
+                echo json_encode(['status' => 'error', 'redirect' => '../../index.php?page=absen&mulai=gagal']);
+            } else {
+                header("Location:../../index.php?page=absen&mulai=gagal");
+            }
         }
     }
 }
@@ -101,7 +116,7 @@ $data   = mysqli_fetch_assoc($result);
 $absensi_sudah = ($data['jml'] > 0) ? "disabled" : "";
 ?>
 
-<form action="apps/pengguna/mulai_absensi.php" method="post" enctype="multipart/form-data">
+<form id="absenForm" action="apps/pengguna/mulai_absensi.php" method="post" enctype="multipart/form-data">
     <div class="row">
         <div class="col-sm-6">
             <div class="form-group">
@@ -122,10 +137,23 @@ $absensi_sudah = ($data['jml'] > 0) ? "disabled" : "";
         </div>
     </div>
 
-    <!-- Foto Absensi -->
+    <!-- Foto Absensi: kamera capture + fallback file -->
     <div class="form-group">
-        <label>Foto Absensi:</label>
-        <input type="file" name="foto" class="form-control" accept="image/*" capture="camera" required>
+        <label>Foto Absensi (Selfie):</label>
+        <div id="camera-area">
+            <video id="cam" playsinline autoplay style="width:100%;max-width:320px;border:1px solid #ccc;border-radius:6px;"></video>
+            <canvas id="cv" style="display:none;"></canvas>
+            <div style="margin-top:8px;">
+                <button type="button" id="btn-capture" class="btn btn-secondary">Ambil Selfie</button>
+                <button type="button" id="btn-retake" class="btn btn-warning d-none">Ulangi</button>
+            </div>
+            <div style="margin-top:8px;">
+                <img id="preview" src="" alt="Preview" style="display:none;max-width:320px;border:1px solid #ccc;border-radius:6px;" />
+            </div>
+        </div>
+        <div style="margin-top:10px;">
+            <small class="text-muted">Pastikan kamera aktif dan beri izin ketika diminta.</small>
+        </div>
     </div>
 
     <!-- Lokasi -->
@@ -159,6 +187,8 @@ $absensi_sudah = ($data['jml'] > 0) ? "disabled" : "";
 <script>
     $(document).ready(function() {
         // Tampilkan alasan jika status = izin
+        // Atur warna teks select: placeholder abu, setelah pilih jadi hitam
+        $('#status').css('color', $('#status').val() === '' ? '#6c757d' : '#000');
         $("#status").change(function() {
             if ($(this).val() == "2") {
                 $("#text_alasan").show();
@@ -167,6 +197,7 @@ $absensi_sudah = ($data['jml'] > 0) ? "disabled" : "";
                 $("#text_alasan").hide();
                 $("#alasan").attr("required", false);
             }
+            $(this).css('color', $(this).val() === '' ? '#6c757d' : '#000');
         });
 
         // Disable tombol di hari Sabtu / Minggu
@@ -186,8 +217,89 @@ $absensi_sudah = ($data['jml'] > 0) ? "disabled" : "";
         }
     });
 
-    // Konfirmasi sebelum absen
-    $('.simpan_absensi').on('click', function() {
-        return confirm("Konfirmasi sebelum absen?");
-    });
+    // Camera capture + AJAX submit
+    (function() {
+        var video = document.getElementById('cam');
+        var canvas = document.getElementById('cv');
+        var preview = document.getElementById('preview');
+        var btnCapture = document.getElementById('btn-capture');
+        var btnRetake = document.getElementById('btn-retake');
+        var capturedBlob = null;
+
+        function startCamera() {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false })
+                .then(function(stream) {
+                    video.srcObject = stream;
+                    video.play();
+                })
+                .catch(function() {
+                    // camera not available
+                    video.style.display = 'none';
+                    btnCapture.style.display = 'none';
+                });
+        }
+
+        btnCapture.addEventListener('click', function() {
+            // capture frame
+            canvas.width = video.videoWidth || 320;
+            canvas.height = video.videoHeight || 240;
+            var ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            canvas.toBlob(function(blob) {
+                capturedBlob = blob;
+                preview.src = URL.createObjectURL(blob);
+                preview.style.display = 'block';
+                btnRetake.classList.remove('d-none');
+            }, 'image/jpeg', 0.9);
+        });
+
+        btnRetake.addEventListener('click', function() {
+            capturedBlob = null;
+            preview.src = '';
+            preview.style.display = 'none';
+            btnRetake.classList.add('d-none');
+        });
+
+        // intercept form submit, build FormData and send via fetch
+        document.getElementById('absenForm').addEventListener('submit', function(ev) {
+            if (!confirm('Konfirmasi sebelum absen?')) { ev.preventDefault(); return; }
+            ev.preventDefault();
+            var form = this;
+            var fd = new FormData(form);
+
+            // require capturedBlob (no file input fallback)
+            if (capturedBlob) {
+                fd.set('foto', capturedBlob, 'selfie.jpg');
+            } else {
+                alert('Silakan ambil selfie terlebih dahulu.');
+                return;
+            }
+
+            // send via fetch
+            fetch(form.action, {
+                method: 'POST',
+                body: fd,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin'
+            }).then(function(resp) {
+                return resp.json();
+            }).then(function(json) {
+                if (json && json.redirect) {
+                    window.location = json.redirect;
+                } else if (json && json.status === 'ok') {
+                    window.location = '../../index.php?page=absen&mulai=berhasil';
+                } else {
+                    alert('Gagal melakukan absen.');
+                }
+            }).catch(function(err) {
+                console.error(err);
+                alert('Terjadi kesalahan saat mengirim absen.');
+            });
+        });
+
+        startCamera();
+    })();
 </script>
