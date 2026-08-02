@@ -700,6 +700,7 @@ function is_active($key, $current)
             });
 
             <?php if (strtolower($_SESSION['level']) === 'siswa' && !empty($_SESSION['location_allowed'])): ?>
+
                 function sendLiveLocation(position) {
                     $.post('apps/pengguna/set_lokasi.php', {
                         latitude: position.coords.latitude,

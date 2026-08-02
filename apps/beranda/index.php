@@ -110,17 +110,18 @@ $row = mysqli_fetch_array($query);
                                         <div class="running-gallery">
                                             <?php
                                             $perusahaan = [
-                                                ["logo" => "https://smktibazma.com/partner/partner-7.webp", "nama" => "PT. El Nusa Petrofin"],
-                                                ["logo" => "https://best.smktibazma.com/src/assets/pgn.png", "nama" => "PT. PGN Com"],
-                                                ["logo" => "https://best.smktibazma.com/src/assets/pertamina.png", "nama" => "PT. Pertamina"],
-                                                ["logo" => "https://best.smktibazma.com/src/assets/pertaminageo.png", "nama" => "PT. Pertamina Geothermal Energy"],
-                                                ["logo" => "https://smktibazma.com/partner/partner-5.webp", "nama" => "PT. Pertamina Hulu Rokan"],
-                                                ["logo" => "https://smktibazma.com/partner/partner-6.webp", "nama" => "PT. Pertamina Patra Niaga"],
-                                                ["logo" => "https://smktibazma.com/partner/partner-4.webp", "nama" => "PT. Pertamina Retail"],
-                                                ["logo" => "https://smktibazma.com/partner/partner-1.webp", "nama" => "PT. Pertamina SVP SS"],
-                                                ["logo" => "https://smktibazma.com/partner/partner-3.webp", "nama" => "PT. Pertamina Training Consulting"],
-                                                ["logo" => "https://smktibazma.com/partner/partner-2.webp", "nama" => "PT. Perta Life Insurance"],
-                                                ["logo" => "https://smktibazma.com/partner/partner-9.webp", "nama" => "PT. Yayasan Kesehatan Pertamina"]
+                                                ["logo" => "https://res.cloudinary.com/dnzhewrrx/image/upload/v1785657669/images_2_yps6fa.png", "nama" => "PT. Patra Jasa"],
+                                                ["logo" => "https://res.cloudinary.com/dnzhewrrx/image/upload/v1784534525/ss-shared-services-logorz_znomwq.png", "nama" => "Pertamina Shared Services"],
+                                                ["logo" => "https://res.cloudinary.com/dnzhewrrx/image/upload/v1785658137/logo-dark.ed10142_zyabzs.png", "nama" => "PT. Asuransi Tugu Pratama Indonesia"],
+                                                ["logo" => "https://res.cloudinary.com/dnzhewrrx/image/upload/v1785657792/pertamina-logo_otuq3r.png", "nama" => "PT. Pertamina Geothermal Energy"],
+                                                ["logo" => "https://res.cloudinary.com/dnzhewrrx/image/upload/v1785658216/logo_1_sl3qe5.png", "nama" => "PT. Pertamina Nusantara Regas"],
+                                                ["logo" => "https://res.cloudinary.com/dnzhewrrx/image/upload/v1785657857/PT_Pertamina_Patra_Niaga.svg_idpzx5.webp", "nama" => "PT. Pertamina Patra Niaga"],
+                                                ["logo" => "https://res.cloudinary.com/dnzhewrrx/image/upload/v1785658301/download_zrircc.svg", "nama" => "PT. Pertamina EP"],
+                                                ["logo" => "https://res.cloudinary.com/dnzhewrrx/image/upload/v1785658354/LOGO-PNRE-2-Well-Vira-Dela-1024x724_h4thqd.png", "nama" => "PT. Pertamina Power Indonesia"],
+                                                ["logo" => "https://res.cloudinary.com/dnzhewrrx/image/upload/v1785657898/logo_ptc_2023_FC_rntell.png", "nama" => "PT. Pertamina Training Consulting"],
+                                                ["logo" => "https://res.cloudinary.com/dnzhewrrx/image/upload/v1785657965/logo-pertalife_uzhwwz.svg", "nama" => "PT. Pertalife Insurance"],
+                                                ["logo" => "https://res.cloudinary.com/dnzhewrrx/image/upload/v1785658028/yakes-menyamping-scaled_haakwt.webp", "nama" => "PT. Yayasan Kesehatan Pertamina"],
+                                                ["logo" => "https://res.cloudinary.com/dnzhewrrx/image/upload/v1785658496/logo-14052026_tdzvsz.png", "nama" => "PT. ASNET"],
                                             ];
 
                                             foreach ($perusahaan as $p):
@@ -148,6 +149,7 @@ $row = mysqli_fetch_array($query);
                         box-shadow: 0 24px 64px rgba(15, 23, 42, .08);
                         border-left: 6px solid rgba(139, 92, 246, .55);
                         margin-top: 1.75rem;
+                        margin-bottom: 1.75rem;
                     }
 
                     .info-box p {
@@ -346,5 +348,5 @@ $row = mysqli_fetch_array($query);
 
                 <!-- FOOTER -->
                 <div class="text-center mt-4 mb-3" style="font-size: 13px; color: #666; font-weight: normal;">
-                    Developed by MDF | SMK TI BAZMA
+                    Developed by MDF X NYF | SMK TI BAZMA
                 </div>

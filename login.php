@@ -223,7 +223,7 @@ $logo          = $row['logo'] ?? 'logo.png';
         </form>
 
         <div class="footer-text">
-           © 2025 SMK TI BAZMA — Team IT
+            © 2025 SMK TI BAZMA — Team IT
         </div>
     </div>
 
