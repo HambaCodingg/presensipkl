@@ -40,9 +40,9 @@ $row = mysqli_fetch_array($query);
                 <div class="panel-body">
 
                     <!-- Salam -->
-                    <h4 class="fw-bold mb-3" style="color: #333;">
+                    <h4 class="fw-bold mb-3">
                         Selamat Datang,
-                        <span style="color:#005BAA">
+                        <span class="text-primary">
                             <?php
                             if ($_SESSION['level'] == 'Admin' || $_SESSION['level'] == 'admin') {
                                 echo isset($_SESSION["nama_admin"]) ? $_SESSION["nama_admin"] : '';
@@ -63,7 +63,7 @@ $row = mysqli_fetch_array($query);
 
 
                     <!-- Info PKL -->
-                    <div class="alert alert-info d-flex align-items-center py-3 px-4 mb-4" role="alert" style="background-color: #009FE3; color: white; border-radius: 8px;">
+                    <div class="alert alert-info d-flex align-items-center py-3 px-4 mb-4 rounded-3" role="alert" style="background: linear-gradient(135deg, rgba(56, 189, 248, .16), rgba(139, 92, 246, .14)); color: #111827; border: 1px solid rgba(139, 92, 246, .16);">
                         <i class="fa fa-bullhorn me-2" style="margin-right:10px;"></i>
                         <strong>Info PKL:</strong>&nbsp; Siswa SMK TI BAZMA sedang melaksanakan Praktik Kerja Lapangan di berbagai DU/DI mitra. Tetap semangat dan jaga profesionalisme!🧑‍💼🔥
                     </div>
@@ -90,8 +90,7 @@ $row = mysqli_fetch_array($query);
                             <li class="mb-2">Setiap akhir minggu, lakukan rekap kegiatan dan konfirmasi ke pembimbing.</li>
                         </ul>
                         <div class="mt-3">
-                            <a href="assets/panduan_pkl.pdf" target="_blank" class="btn btn-sm"
-                                style="background-color:#005BAA; color:white; border-radius:6px; padding:6px 14px;">
+                            <a href="assets/panduan_pkl.pdf" target="_blank" class="btn btn-sm btn-primary">
                                 <i class="fa fa-download"></i> Download Panduan Lengkap
                             </a>
                         </div>
@@ -142,103 +141,79 @@ $row = mysqli_fetch_array($query);
 
                 <!-- STYLE -->
                 <style>
-                    /* STYLE GABUNGAN */
                     .info-box {
-                        background: #fff;
-                        padding: 1.25rem;
-                        border-radius: 8px;
-                        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-                        border-left: 4px solid #005BAA;
-                        margin-top: 1.5rem;
+                        background: #ffffff;
+                        padding: 1.75rem;
+                        border-radius: 24px;
+                        box-shadow: 0 24px 64px rgba(15, 23, 42, .08);
+                        border-left: 6px solid rgba(139, 92, 246, .55);
+                        margin-top: 1.75rem;
                     }
 
                     .info-box p {
-                        font-size: 16px;
-                        font-weight: 600;
-                        color: #005BAA;
-                        margin: 0;
+                        font-size: 1rem;
+                        font-weight: 700;
+                        color: #4338ca;
+                        margin: 0 0 1rem;
                     }
 
                     .info-box ul {
-                        font-size: 15px;
-                        color: #444;
-                        margin-top: 10px;
-                        padding-left: 20px;
-                    }
-
-                    .fw-bold {
-                        font-weight: 700;
-                    }
-
-                    .fw-semibold {
-                        font-weight: 600;
-                    }
-
-                    .me-2 {
-                        margin-right: 0.5rem;
-                    }
-
-                    .border-start {
-                        border-left-width: 4px !important;
-                        border-left-style: solid !important;
+                        font-size: .95rem;
+                        color: #475569;
+                        margin-top: .75rem;
+                        padding-left: 1.25rem;
                     }
 
                     .panel {
-                        border: none;
-                        border-radius: 12px;
-                        box-shadow: 0 8px 20px rgba(0, 114, 206, 0.15);
+                        border: 1px solid rgba(139, 92, 246, .14);
+                        border-radius: 28px;
+                        box-shadow: 0 26px 76px rgba(15, 23, 42, .08);
+                        overflow: hidden;
                     }
 
                     .panel-heading {
-                        background: linear-gradient(90deg, #005BAA, #009FE3, #00BCD4);
-                        color: white;
-                        padding: 15px 20px;
-                        font-weight: 600;
-                        font-size: 18px;
-                        border-top-left-radius: 12px;
-                        border-top-right-radius: 12px;
+                        background: linear-gradient(135deg, rgba(139, 92, 246, .18), rgba(56, 189, 248, .14));
+                        color: #111827;
+                        padding: 1.5rem 1.35rem;
+                        font-weight: 700;
+                        font-size: 1.05rem;
                         text-align: center;
                     }
 
                     .panel-subheading {
                         text-align: center;
-                        font-size: 18px;
-                        font-weight: 600;
-                        color: #003a75;
-                        margin: 4px 0 10px;
-                        /* lebih rapat */
-                        border-bottom: 1px solid #e6f0fa;
-                        /* tipis biar elegan */
-                        padding-bottom: 4px;
+                        font-size: 1rem;
+                        font-weight: 700;
+                        color: #475569;
+                        margin: 1rem 0 0.75rem;
+                        border-bottom: 1px solid rgba(226, 232, 240, .95);
+                        padding-bottom: 0.75rem;
                     }
 
                     .panel-body {
-                        background-color: #ffffff;
-                        padding: 25px;
-                        font-size: 15px;
-                        color: #333;
-                        border-bottom-left-radius: 12px;
-                        border-bottom-right-radius: 12px;
+                        background: #ffffff;
+                        padding: 2rem;
+                        color: #475569;
                     }
 
                     .running-gallery-wrapper {
                         overflow: hidden;
                         position: relative;
                         width: 100%;
-                        border-radius: 12px;
-                        padding: 10px 0;
-                        background: #f3f9ff;
+                        border-radius: 24px;
+                        padding: 1rem 0;
+                        background: rgba(236, 245, 255, .85);
                     }
 
                     .running-gallery {
                         display: flex;
-                        animation: scrollGallery 40s linear infinite;
+                        animation: scrollGallery 35s linear infinite;
                     }
 
                     .perusahaan-item {
                         flex: 0 0 auto;
                         width: 200px;
-                        margin: 0 20px;
+                        margin: 0 18px;
                         text-align: center;
                     }
 
@@ -246,22 +221,30 @@ $row = mysqli_fetch_array($query);
                         width: 100%;
                         height: 140px;
                         object-fit: contain;
-                        border-radius: 10px;
-                        box-shadow: 0 4px 8px rgba(0, 114, 206, 0.2);
-                        transition: transform 0.4s ease;
-                        background: white;
-                        padding: 10px;
+                        border-radius: 18px;
+                        box-shadow: 0 18px 44px rgba(15, 23, 42, .08);
+                        transition: transform .35s ease;
+                        background: #ffffff;
+                        padding: 12px;
                     }
 
                     .perusahaan-item img:hover {
-                        transform: scale(1.05);
+                        transform: translateY(-4px);
                     }
 
                     .perusahaan-item .caption {
-                        margin-top: 10px;
-                        font-size: 14px;
-                        color: #005BAA;
-                        font-weight: normal;
+                        margin-top: 12px;
+                        font-size: .95rem;
+                        color: #334155;
+                        font-weight: 600;
+                    }
+
+                    .text-primary {
+                        color: #4338ca !important;
+                    }
+
+                    .me-2 {
+                        margin-right: 0.5rem;
                     }
 
                     @keyframes scrollGallery {
@@ -274,24 +257,22 @@ $row = mysqli_fetch_array($query);
                         }
                     }
 
-                    /* Biar teks panel heading & subheading bisa multi-baris */
                     .panel-heading,
                     .panel-subheading {
                         white-space: normal;
                         word-wrap: break-word;
                     }
 
-                    /* RESPONSIVE SECTION */
                     @media screen and (max-width: 768px) {
                         h4.fw-bold {
-                            font-size: 20px;
+                            font-size: 1.35rem;
                             text-align: center;
                         }
 
                         .panel-body p,
                         .alert,
                         .bg-white ul li {
-                            font-size: 14px;
+                            font-size: .95rem;
                             text-align: justify;
                         }
 
@@ -301,79 +282,64 @@ $row = mysqli_fetch_array($query);
                         }
 
                         .alert i {
-                            margin-bottom: 5px;
-                        }
-
-                        .bg-white {
-                            padding: 15px;
+                            margin-bottom: .5rem;
                         }
 
                         .perusahaan-item {
-                            width: 120px;
+                            width: 130px;
                             margin: 0 8px;
                         }
 
                         .perusahaan-item img {
-                            height: 80px;
+                            height: 88px;
                         }
 
                         .perusahaan-item .caption {
-                            font-size: 12px;
+                            font-size: .85rem;
                         }
 
                         .panel-heading {
-                            font-size: 14px;
-                            /* kecilin judul panel */
-                            padding: 10px;
-                            /* biar nggak mepet */
-                            text-align: center;
+                            font-size: .95rem;
+                            padding: 1rem;
                         }
 
                         .panel-subheading {
-                            font-size: 14px;
-                            /* kecilin subjudul */
-                            text-align: center;
+                            font-size: .95rem;
                         }
 
                         .panel-body {
-                            padding: 15px;
+                            padding: 1rem;
                         }
 
                         .breadcrumb {
-                            font-size: 14px;
+                            font-size: .9rem;
                         }
 
                         .running-gallery {
-                            animation-duration: 60s;
+                            animation-duration: 55s;
                         }
                     }
 
-                    /* Extra responsive untuk device kecil banget (iPhone SE, Galaxy S8+, Z Fold narrow) */
                     @media screen and (max-width: 400px) {
                         .panel-heading {
-                            font-size: 12px;
-                            /* lebih kecil biar muat */
-                            padding: 8px;
-                            /* rapat */
-                            line-height: 1.3;
-                            /* biar teks bisa 2 baris */
-                            text-align: center;
+                            font-size: .85rem;
+                            padding: .75rem;
+                            line-height: 1.2;
                         }
 
                         .panel-subheading {
-                            font-size: 12px;
+                            font-size: .8rem;
                             line-height: 1.2;
-                            text-align: center;
-                            margin-bottom: 6px;
+                            margin-bottom: .5rem;
                         }
 
                         .panel-body {
-                            font-size: 13px;
-                            padding: 12px;
+                            font-size: .9rem;
+                            padding: .75rem;
                         }
 
                         .breadcrumb {
-                            font-size: 12px;
+                            font-size: .8rem;
                         }
                     }
                 </style>

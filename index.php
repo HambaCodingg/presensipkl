@@ -76,9 +76,21 @@ function is_active($key, $current)
     <script src="template/js/jquery-2.2.3.min.js"></script>
 
     <style>
-        /* ----------------------------------------------
-           RESET / UTILITY
-        ---------------------------------------------- */
+        :root {
+            --bg: #f8fbff;
+            --surface: #ffffff;
+            --surface-soft: #f5f3ff;
+            --text: #111827;
+            --muted: #64748b;
+            --border: #e7e5ff;
+            --primary: #8b5cf6;
+            --accent: #38bdf8;
+            --success: #4ade80;
+            --warning: #fbcfe8;
+            --danger: #fb7185;
+            --shadow: 0 30px 80px rgba(15, 23, 42, .08);
+        }
+
         * {
             box-sizing: border-box;
         }
@@ -86,11 +98,10 @@ function is_active($key, $current)
         html,
         body {
             height: 100%;
-        }
-
-        body {
-            background: #f7f9fc;
-            color: #222;
+            margin: 0;
+            font-family: Inter, "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(180deg, #f8fafc 0%, #f3efff 100%);
+            color: var(--text);
         }
 
         .hide {
@@ -108,9 +119,6 @@ function is_active($key, $current)
             border: 0;
         }
 
-        /* ----------------------------------------------
-           PRELOADER
-        ---------------------------------------------- */
         .se-pre-con {
             position: fixed;
             inset: 0;
@@ -118,46 +126,39 @@ function is_active($key, $current)
             background: #fff;
         }
 
-        /* ----------------------------------------------
-           NAVBAR (Brand fixed as requested)
-        ---------------------------------------------- */
         .navbar-custom {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
+            height: 72px;
+            padding: 0 28px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 10px 16px;
-            background: linear-gradient(90deg, #e10600, #004aad);
-            box-shadow: 0 3px 8px rgba(0, 0, 0, .18);
+            background: #ffffff;
+            border-bottom: 1px solid rgba(15, 23, 42, .08);
+            box-shadow: 0 24px 40px rgba(15, 23, 42, .06);
             z-index: 1030;
-            /* below modal */
         }
 
         .navbar-custom .brand-title {
-            color: #fff;
+            color: #111827;
             font-weight: 800;
-            line-height: 1.2;
             margin: 0;
-            font-size: clamp(16px, 2.2vw, 22px);
-            letter-spacing: .2px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            font-size: clamp(18px, 2.2vw, 24px);
+            letter-spacing: .02em;
         }
 
-        /* Hamburger (exactly 3 bars). Hidden on desktop, visible on mobile */
         #sidebarToggle {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 42px;
-            height: 36px;
+            width: 46px;
+            height: 46px;
             border: 0;
             background: transparent;
-            color: #fff;
+            color: #334155;
             cursor: pointer;
         }
 
@@ -165,59 +166,53 @@ function is_active($key, $current)
             display: block;
             width: 24px;
             height: 2px;
-            background: #fff;
+            background: #334155;
             margin: 4px 0;
             transition: .25s;
         }
 
-        /* Show only on mobile/tablet */
         @media (min-width: 992px) {
             #sidebarToggle {
                 display: none;
             }
         }
 
-        /* ----------------------------------------------
-           LAYOUT
-        ---------------------------------------------- */
         .layout {
             display: block;
             min-height: 100%;
-            padding-top: 64px;
-            /* navbar height */
+            padding-top: 72px;
         }
 
         @media (max-width: 575.98px) {
             .layout {
-                padding-top: 56px;
+                padding-top: 64px;
             }
         }
 
-        /* Sidebar base */
         #sidebar {
             position: fixed;
-            top: 64px;
+            top: 72px;
             left: 0;
             bottom: 0;
-            width: 250px;
-            background: #003a75;
-            color: #fff;
-            border-right: 3px solid #e10600;
+            width: 280px;
+            background: rgba(255, 255, 255, .96);
+            color: #334155;
+            border-right: 1px solid rgba(15, 23, 42, .08);
             overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
+            backdrop-filter: blur(14px);
         }
 
         @media (max-width: 575.98px) {
             #sidebar {
-                top: 56px;
+                top: 64px;
             }
         }
 
-        /* Sidebar content */
         #sidebar .profile {
-            padding: 16px 12px;
+            padding: 24px 18px;
             text-align: center;
-            border-bottom: 1px solid rgba(255, 255, 255, .15);
+            border-bottom: 1px solid rgba(15, 23, 42, .08);
+            background: linear-gradient(180deg, rgba(139, 92, 246, .1), rgba(56, 189, 248, .06));
         }
 
         #sidebar .profile img {
@@ -225,25 +220,27 @@ function is_active($key, $current)
             height: 92px;
             border-radius: 50%;
             object-fit: cover;
-            border: 3px solid #e10600;
+            border: 3px solid rgba(139, 92, 246, .2);
+            margin-bottom: 12px;
         }
 
         #sidebar .profile .name {
-            margin-top: 10px;
+            margin: 0;
             font-weight: 700;
-            color: #fff;
-            font-size: 1.05rem;
+            color: #111827;
+            font-size: 1rem;
         }
 
         #sidebar .profile .role {
-            color: #c7c7c7;
+            margin-top: 6px;
+            color: #64748b;
             font-size: .85rem;
         }
 
         #sidebar .divider {
-            height: 2px;
-            margin: 14px 0;
-            background: #e10600;
+            height: 1px;
+            margin: 20px 0;
+            background: rgba(139, 92, 246, .14);
         }
 
         #sidebar ul.menu {
@@ -253,51 +250,74 @@ function is_active($key, $current)
         }
 
         #sidebar ul.menu li {
-            border-bottom: 1px solid rgba(255, 255, 255, .08);
+            margin-bottom: 10px;
         }
 
         #sidebar ul.menu li a {
             display: flex;
             align-items: center;
-            gap: 10px;
-            color: #eaeaea;
+            gap: 14px;
+            color: #475569;
             text-decoration: none;
-            padding: 12px 18px;
+            padding: 14px 18px;
             font-weight: 600;
+            border-radius: 18px;
+            background: rgba(248, 250, 255, .95);
+            border: 1px solid transparent;
+            transition: all .25s ease;
+        }
+
+        #sidebar ul.menu li a em.fa {
+            width: 22px;
+            text-align: center;
+            color: #8b5cf6;
         }
 
         #sidebar ul.menu li a:hover,
         #sidebar ul.menu li.active>a {
-            background: #e10600;
-            color: #fff;
+            background: linear-gradient(135deg, rgba(139, 92, 246, .18), rgba(56, 189, 248, .14));
+            color: #111827;
+            border-color: rgba(139, 92, 246, .16);
         }
 
-        #sidebar ul.menu li a em.fa {
-            width: 20px;
-            text-align: center;
+        #sidebar ul.menu li.active>a em.fa {
+            color: #4338ca;
         }
 
-        /* Desktop: sidebar is always visible, main content shifted right */
+        #sidebar a#keluar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 18px;
+            border-radius: 18px;
+            color: #c2410c;
+            margin-top: 18px;
+            background: rgba(251, 113, 133, .14);
+            font-weight: 600;
+        }
+
+        #sidebar a#keluar:hover {
+            background: rgba(251, 113, 133, .24);
+        }
+
         .main {
-            padding: 16px;
-            min-height: calc(100vh - 64px);
+            padding: 30px 30px 44px;
+            min-height: calc(100vh - 72px);
         }
 
         @media (min-width: 992px) {
             .main {
-                margin-left: 250px;
+                margin-left: 280px;
             }
         }
 
-        /* Mobile/Tablet: sidebar becomes offcanvas from left (hidden by default) */
         @media (max-width: 991.98px) {
             #sidebar {
                 transform: translateX(-100%);
                 transition: transform .28s ease;
-                width: 260px;
-                top: 56px;
+                width: 280px;
+                top: 64px;
                 z-index: 1052;
-                /* above overlay */
             }
 
             #sidebar.open {
@@ -307,7 +327,7 @@ function is_active($key, $current)
             .overlay {
                 position: fixed;
                 inset: 0;
-                background: rgba(0, 0, 0, .45);
+                background: rgba(15, 23, 42, .35);
                 display: none;
                 z-index: 1051;
             }
@@ -321,9 +341,6 @@ function is_active($key, $current)
             }
         }
 
-        /* ----------------------------------------------
-           MODAL FIX (always over navbar/offcanvas)
-        ---------------------------------------------- */
         .modal-backdrop {
             z-index: 20040 !important;
         }
@@ -340,10 +357,6 @@ function is_active($key, $current)
             z-index: 20055 !important;
         }
 
-        /* ----------------------------------------------
-           RESPONSIVE IMAGES / CARDS AREA
-           (supaya "Dokumentasi Perusahaan" tidak bentrok)
-        ---------------------------------------------- */
         .content-wrapper {
             width: 100%;
             margin: 0 auto;
@@ -353,32 +366,104 @@ function is_active($key, $current)
             display: block;
             max-width: 100%;
             height: auto;
-            border-radius: 8px;
+            border-radius: 24px;
+            box-shadow: 0 20px 50px rgba(15, 23, 42, .08);
         }
 
         .page-title {
             font-weight: 800;
-            font-size: clamp(18px, 2.6vw, 26px);
-            color: #003a75;
-            margin: 8px 0 16px;
-            line-height: 1.25;
-            word-break: break-word;
+            font-size: clamp(20px, 2.6vw, 28px);
+            color: #111827;
+            margin: 0 0 18px;
+            line-height: 1.15;
         }
 
         .card {
-            background: #fff;
-            border-radius: 10px;
-            box-shadow: 0 4px 14px rgba(0, 0, 0, .06);
-            padding: 16px;
-            margin-bottom: 18px;
+            background: #ffffff;
+            border-radius: 24px;
+            box-shadow: 0 22px 60px rgba(15, 23, 42, .08);
+            padding: 24px;
+            margin-bottom: 22px;
+            border: 1px solid rgba(139, 92, 246, .12);
         }
 
-        /* ----------------------------------------------
-           ACCESSIBILITY + FOCUS
-        ---------------------------------------------- */
+        .card:hover {
+            transform: translateY(-2px);
+            transition: transform .2s ease;
+        }
+
+        .btn,
+        .button {
+            border-radius: 18px;
+            font-weight: 700;
+            padding: 14px 22px;
+            transition: all .2s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #c4b5fd 0%, #8b5cf6 100%);
+            border-color: transparent;
+            color: #ffffff;
+        }
+
+        .btn-primary:hover,
+        .btn-primary:focus {
+            background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);
+            color: #ffffff;
+        }
+
+        .table {
+            background: transparent;
+        }
+
+        .table thead th {
+            border-bottom: 2px solid rgba(226, 232, 240, .95);
+            font-weight: 700;
+            color: #475569;
+            background: #f8f5ff;
+        }
+
+        .table tbody tr {
+            border-bottom: 1px solid rgba(226, 232, 240, .75);
+        }
+
+        .table td,
+        .table th {
+            vertical-align: middle;
+            padding: 18px 16px;
+        }
+
+        .table tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        .table-striped tbody tr:nth-of-type(odd) {
+            background-color: #faf5ff;
+        }
+
+        .table-responsive {
+            border-radius: 24px;
+            overflow: hidden;
+        }
+
+        .form-control {
+            border: 1px solid rgba(139, 92, 246, .18);
+            border-radius: 16px;
+            padding: 14px 16px;
+            background: #fff;
+            box-shadow: none;
+            transition: border-color .2s ease, box-shadow .2s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: rgba(56, 189, 248, .8);
+            box-shadow: 0 0 0 4px rgba(56, 189, 248, .16);
+        }
+
         a:focus,
         button:focus {
-            outline: 2px dashed #004aad;
+            outline: 2px dashed rgba(139, 92, 246, .35);
             outline-offset: 2px;
         }
     </style>
