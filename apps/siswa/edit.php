@@ -32,16 +32,40 @@ if (isset($_POST['edit_siswa'])) {
         if (!empty($foto_baru)) {
             $x = explode('.', $foto_baru);
             $ekstensi = strtolower(end($x));
-            $ukuran = $_FILES['foto_baru']['size'];
-            $file_tmp = $_FILES['foto_baru']['tmp_name'];
+            $ukuran = $_FILES['foto_baru']['size'] ?? 0;
+            $file_tmp = $_FILES['foto_baru']['tmp_name'] ?? '';
+            $file_error = $_FILES['foto_baru']['error'] ?? UPLOAD_ERR_NO_FILE;
 
-            if (in_array($ekstensi, $ekstensi_diperbolehkan) === true) {
-                if (move_uploaded_file($file_tmp, 'foto/' . $foto_baru)) {
-                    if ($foto_saat_ini != 'foto_default.png' && file_exists("foto/" . $foto_saat_ini)) {
-                        unlink("foto/" . $foto_saat_ini);
-                    }
+            if (!in_array($ekstensi, $ekstensi_diperbolehkan)) {
+                mysqli_query($kon, "ROLLBACK");
+                header("Location:../../index.php?page=siswa&edit=gagal_format");
+                exit;
+            }
 
-                    $sql = "UPDATE tbl_siswa SET
+            if ($file_error !== UPLOAD_ERR_OK || !is_uploaded_file($file_tmp)) {
+                mysqli_query($kon, "ROLLBACK");
+                header("Location:../../index.php?page=siswa&edit=gagal_upload");
+                exit;
+            }
+
+            $upload_dir = __DIR__ . '/foto/';
+            if (!is_dir($upload_dir)) {
+                mkdir($upload_dir, 0755, true);
+            }
+
+            // Buat nama file unik untuk mencegah overwrite
+            $safe_name = preg_replace('/[^A-Za-z0-9._-]/', '_', basename($foto_baru));
+            $foto_baru_unik = time() . '_' . $safe_name;
+
+            $dest = $upload_dir . $foto_baru_unik;
+            if (move_uploaded_file($file_tmp, $dest)) {
+                // Hapus file lama jika bukan default
+                $old_path = __DIR__ . '/foto/' . $foto_saat_ini;
+                if ($foto_saat_ini != 'foto_default.png' && file_exists($old_path)) {
+                    @unlink($old_path);
+                }
+
+                $sql = "UPDATE tbl_siswa SET
                         nama='$nama',
                         perusahaan='$perusahaan',
                         jurusan='$jurusan',
@@ -50,15 +74,12 @@ if (isset($_POST['edit_siswa'])) {
                         akhir_pkl='$akhir_pkl',
                         alamat='$alamat',
                         no_telp='$no_telp',
-                        foto='$foto_baru'
+                        foto='$foto_baru_unik'
                         WHERE id_siswa=$id_siswa";
-                } else {
-                    mysqli_query($kon, "ROLLBACK");
-                    die("Gagal mengupload foto baru.");
-                }
             } else {
                 mysqli_query($kon, "ROLLBACK");
-                die("Format file foto tidak diperbolehkan.");
+                header("Location:../../index.php?page=siswa&edit=gagal_upload");
+                exit;
             }
         } else {
             // Jika tidak upload foto baru, update tanpa foto
