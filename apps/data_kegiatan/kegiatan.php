@@ -212,21 +212,32 @@ $tanggal_keluar = strftime("%d %B %Y", strtotime($akhir_pkl));
 
 <script>
     $(document).ready(function() {
-        var hari = new Date().getDay();
-        if (hari == 0 || hari == 6) {
-            $('#tombol_kegiatan').attr('disabled', true);
+        var userLevel = '<?php echo strtolower($_SESSION['level']); ?>';
+        // only apply weekend-disable for non-siswa users
+        if (userLevel !== 'siswa') {
+            var hari = new Date().getDay();
+            if (hari == 0 || hari == 6) {
+                $('#tombol_kegiatan').attr('disabled', true);
+            }
         }
     });
 </script>
 
 <script>
     $(document).ready(function() {
-        var tanggal_sekarang = new Date();
-        var tanggal_keluar = new Date("<?php echo $tanggal_keluar; ?>");
-        if (tanggal_sekarang > tanggal_keluar) {
-            $("#tombol_kegiatan").hide();
-            $("#div_periode").show();
+        var userLevel = '<?php echo strtolower($_SESSION['level']); ?>';
+        // only hide tombol when periode selesai for non-siswa users
+        if (userLevel !== 'siswa') {
+            var tanggal_sekarang = new Date();
+            var tanggal_keluar = new Date("<?php echo $tanggal_keluar; ?>");
+            if (tanggal_sekarang > tanggal_keluar) {
+                $("#tombol_kegiatan").hide();
+                $("#div_periode").show();
+            } else {
+                $("#div_periode").hide();
+            }
         } else {
+            // siswa always see add button; hide periode notice
             $("#div_periode").hide();
         }
     });
