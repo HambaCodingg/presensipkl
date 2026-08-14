@@ -454,7 +454,16 @@ function is_active($key, $current)
 
         .table-responsive {
             border-radius: 24px;
-            overflow: hidden;
+            overflow-x: auto;
+            overflow-y: hidden;
+            -webkit-overflow-scrolling: touch;
+            width: 100%;
+        }
+
+        @media (max-width: 767px) {
+            .table {
+                min-width: 680px;
+            }
         }
 
         .form-control {
