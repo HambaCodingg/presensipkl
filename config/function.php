@@ -79,7 +79,7 @@ function AbsensiOtomatis($sql)
 {
     include 'database.php';
     $sql = "SELECT tbl_siswa.id_siswa, tbl_siswa.nama, tbl_siswa.perusahaan, 
-        tbl_siswa.mulai_pkl, tbl_siswa.akhir_pkl, tbl_absensi.id_absensi, 
+        tbl_siswa.mulai_pkl, tbl_siswa.akhir_pkl, tbl_absensi.id_absensi, tbl_absensi.foto,
         (CASE
             WHEN tbl_absensi.status IS NULL THEN 'Belum Absensi'
             WHEN tbl_absensi.status = 1 THEN 'Hadir'
@@ -105,7 +105,7 @@ function AbsensiOtomatis($sql)
 function PencarianAbsensi($nama, $tanggal_awal, $tanggal_akhir)
 {
     include 'database.php';
-    $sql = "SELECT tbl_absensi.id_absensi, tbl_absensi.id_siswa, 
+    $sql = "SELECT tbl_absensi.id_absensi, tbl_absensi.id_siswa, tbl_absensi.foto,
     COALESCE(CASE tbl_absensi.status 
         WHEN 1 THEN 'Hadir' 
         WHEN 2 THEN 'Izin' 

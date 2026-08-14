@@ -84,6 +84,7 @@ if ($_SESSION["level"] != 'Admin' and $_SESSION["level"] != 'admin') {
                                 <th>No</th>
                                 <th>Nama</th>
                                 <th>Perusahaan</th>
+                                <th>Foto</th>
                                 <th>Status</th>
                                 <th>Waktu</th>
                                 <th>Hari</th>
@@ -114,6 +115,13 @@ if ($_SESSION["level"] != 'Admin' and $_SESSION["level"] != 'admin') {
                                     <td><?php echo $no; ?></td>
                                     <td><?php echo $data['nama']; ?></td>
                                     <td><?php echo $data['perusahaan']; ?></td>
+                                    <td>
+                                        <?php
+                                        $foto = isset($data['foto']) && $data['foto'] != '' ? $data['foto'] : 'default.png';
+                                        $fotoPath = 'uploads/absensi/' . $foto;
+                                        ?>
+                                        <img src="<?php echo $fotoPath; ?>" alt="Foto Absensi" width="80" style="border-radius:6px; object-fit:cover; max-height:80px;">
+                                    </td>
                                     <td><?php echo $data['status']; ?></td>
                                     <td><?php echo $data['waktu']; ?></td>
                                     <td>
