@@ -59,10 +59,12 @@ $tepat_hari_ini_query = mysqli_query($kon, "
 ");
 if ($tepat_hari_ini_query) {
     while ($tepat = mysqli_fetch_assoc($tepat_hari_ini_query)) {
-        $jam_target = substr($tepat['jam_masuk'] ?: '08:00:00', 0, 5);
-        $tepat_hari_ini[$jam_target][] = $tepat;
+        $tepat_hari_ini[] = $tepat;
     }
 }
+usort($tepat_hari_ini, function ($a, $b) {
+    return strcmp($a['waktu'], $b['waktu']) ?: strcasecmp($a['nama'], $b['nama']);
+});
 
 $rekap_bulanan_query = mysqli_query($kon, "
     SELECT a.id_siswa, s.nama, s.perusahaan,
@@ -82,8 +84,7 @@ $rekap_bulanan_query = mysqli_query($kon, "
 $pemenang_harian_bulanan = [];
 if ($rekap_bulanan_query) {
     while ($rekap = mysqli_fetch_assoc($rekap_bulanan_query)) {
-        $jam_target = substr($rekap['jam_masuk'], 0, 5);
-        $kunci_harian = $rekap['tanggal'] . '|' . $jam_target;
+        $kunci_harian = $rekap['tanggal'];
 
         if (!isset($pemenang_harian_bulanan[$kunci_harian])) {
             $pemenang_harian_bulanan[$kunci_harian] = [
@@ -104,29 +105,25 @@ if ($rekap_bulanan_query) {
 }
 
 $podium_bulanan = [];
-foreach ($pemenang_harian_bulanan as $kunci_harian => $pemenang_harian) {
-    $jam_target = substr($kunci_harian, 11, 5);
+foreach ($pemenang_harian_bulanan as $pemenang_harian) {
     foreach ($pemenang_harian['siswa'] as $pemenang) {
         $id_siswa = $pemenang['id_siswa'];
-        if (!isset($podium_bulanan[$jam_target][$id_siswa])) {
-            $podium_bulanan[$jam_target][$id_siswa] = [
+        if (!isset($podium_bulanan[$id_siswa])) {
+            $podium_bulanan[$id_siswa] = [
                 'nama' => $pemenang['nama'],
                 'perusahaan' => $pemenang['perusahaan'],
                 'jam_masuk' => $pemenang['jam_masuk'],
                 'jumlah' => 0
             ];
         }
-        $podium_bulanan[$jam_target][$id_siswa]['jumlah']++;
+        $podium_bulanan[$id_siswa]['jumlah']++;
     }
 }
-foreach ($podium_bulanan as &$daftar_pemenang) {
-    $daftar_pemenang = array_values($daftar_pemenang);
-    usort($daftar_pemenang, function ($a, $b) {
-        return (int) $b['jumlah'] <=> (int) $a['jumlah']
-            ?: strcasecmp($a['nama'], $b['nama']);
-    });
-}
-unset($daftar_pemenang);
+$podium_bulanan = array_values($podium_bulanan);
+usort($podium_bulanan, function ($a, $b) {
+    return (int) $b['jumlah'] <=> (int) $a['jumlah']
+        ?: strcasecmp($a['nama'], $b['nama']);
+});
 ?>
 
 <div class="container-fluid px-3">
@@ -240,28 +237,14 @@ unset($daftar_pemenang);
                                 <span><?php echo (int) $statistik['hadir']; ?> siswa hadir</span>
                             </div>
                             <?php if (!empty($tepat_hari_ini)): ?>
-                                <div class="podium-groups">
-                                    <?php ksort($tepat_hari_ini); ?>
-                                    <?php foreach ($tepat_hari_ini as $jam => $daftar_siswa): ?>
-                                        <?php
-                                        usort($daftar_siswa, function ($a, $b) {
-                                            return strcmp($a['waktu'], $b['waktu']) ?: strcasecmp($a['nama'], $b['nama']);
-                                        });
-                                        $daftar_siswa = array_slice($daftar_siswa, 0, 3);
-                                        ?>
-                                        <div class="podium-group">
-                                            <div class="podium-group-title"><i class="fa fa-clock-o"></i> Target masuk <?php echo htmlspecialchars($jam, ENT_QUOTES, 'UTF-8'); ?></div>
-                                            <div class="podium-stage">
-                                                <?php foreach ($daftar_siswa as $nomor => $awal): ?>
-                                                    <div class="podium-place place-<?php echo $nomor + 1; ?>">
-                                                        <div class="podium-medal"><i class="fa fa-trophy"></i></div>
-                                                        <strong><?php echo htmlspecialchars($awal['nama'], ENT_QUOTES, 'UTF-8'); ?></strong>
-                                                        <small><?php echo htmlspecialchars($awal['perusahaan'], ENT_QUOTES, 'UTF-8'); ?></small>
-                                                        <span class="podium-time">Absen <?php echo htmlspecialchars($awal['waktu'], ENT_QUOTES, 'UTF-8'); ?></span>
-                                                        <div class="podium-block"><b><?php echo $nomor + 1; ?></b></div>
-                                                    </div>
-                                                <?php endforeach; ?>
-                                            </div>
+                                <div class="podium-stage">
+                                    <?php foreach (array_slice($tepat_hari_ini, 0, 3) as $nomor => $awal): ?>
+                                        <div class="podium-place place-<?php echo $nomor + 1; ?>">
+                                            <div class="podium-medal"><i class="fa fa-trophy"></i></div>
+                                            <strong><?php echo htmlspecialchars($awal['nama'], ENT_QUOTES, 'UTF-8'); ?></strong>
+                                            <small><?php echo htmlspecialchars($awal['perusahaan'], ENT_QUOTES, 'UTF-8'); ?></small>
+                                            <span class="podium-time">Absen <?php echo htmlspecialchars($awal['waktu'], ENT_QUOTES, 'UTF-8'); ?></span>
+                                            <div class="podium-block"><b><?php echo $nomor + 1; ?></b></div>
                                         </div>
                                     <?php endforeach; ?>
                                 </div>
@@ -279,21 +262,15 @@ unset($daftar_pemenang);
                                 <span><?php echo date('F Y'); ?></span>
                             </div>
                             <?php if (!empty($podium_bulanan)): ?>
-                                <div class="monthly-podium-groups">
-                                    <?php ksort($podium_bulanan); ?>
-                                    <?php foreach ($podium_bulanan as $jam => $daftar_pemenang): ?>
-                                        <div class="monthly-podium-group">
-                                            <div class="podium-group-title"><i class="fa fa-clock-o"></i> Target masuk <?php echo htmlspecialchars($jam, ENT_QUOTES, 'UTF-8'); ?></div>
-                                            <?php foreach (array_slice($daftar_pemenang, 0, 3) as $nomor => $pemenang): ?>
-                                                <div class="monthly-winner">
-                                                    <span class="arrival-rank"><?php echo $nomor + 1; ?></span>
-                                                    <div>
-                                                        <strong><?php echo htmlspecialchars($pemenang['nama'], ENT_QUOTES, 'UTF-8'); ?></strong>
-                                                        <small><?php echo htmlspecialchars($pemenang['perusahaan'], ENT_QUOTES, 'UTF-8'); ?></small>
-                                                    </div>
-                                                    <b><?php echo (int) $pemenang['jumlah']; ?>x paling awal</b>
-                                                </div>
-                                            <?php endforeach; ?>
+                                <div class="monthly-podium-group">
+                                    <?php foreach (array_slice($podium_bulanan, 0, 3) as $nomor => $pemenang): ?>
+                                        <div class="monthly-winner">
+                                            <span class="arrival-rank"><?php echo $nomor + 1; ?></span>
+                                            <div>
+                                                <strong><?php echo htmlspecialchars($pemenang['nama'], ENT_QUOTES, 'UTF-8'); ?></strong>
+                                                <small><?php echo htmlspecialchars($pemenang['perusahaan'], ENT_QUOTES, 'UTF-8'); ?></small>
+                                            </div>
+                                            <b><?php echo (int) $pemenang['jumlah']; ?>x paling awal</b>
                                         </div>
                                     <?php endforeach; ?>
                                 </div>
