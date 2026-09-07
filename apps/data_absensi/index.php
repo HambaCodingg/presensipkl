@@ -131,10 +131,7 @@ if ($_SESSION["level"] != 'Admin' and $_SESSION["level"] != 'admin') {
                 <div class="table-responsive">
                     <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
                         <?php if ($is_filtered): ?>
-                            <thead class="attendance-matrix-head">
-                                <tr>
-                                    <th>No</th>
-                                    <th>Nama</th>
+
                                     <?php foreach ($matrix_dates as $matrix_date): ?>
                                         <th><?php echo (int) date('j', strtotime($matrix_date)); ?></th>
                                     <?php endforeach; ?>
@@ -151,18 +148,20 @@ if ($_SESSION["level"] != 'Admin' and $_SESSION["level"] != 'admin') {
                                             <?php
                                             $cell = $matrix_row['absensi'][$matrix_date] ?? null;
                                             $status_code = (int) ($cell['status_code'] ?? 0);
-                                            $status_label = $status_code === 1 ? 'Hadir' : ($status_code === 2 ? 'Izin' : 'Alfa');
-                                            $status_class = $status_code === 1 ? 'matrix-hadir' : ($status_code === 2 ? 'matrix-izin' : 'matrix-alfa');
+                                            $status_label = $status_code === 1 ? 'Hadir' : ($status_code === 2 ? 'Izin' : '');
+                                            $status_class = $status_code === 1 ? 'matrix-hadir' : 'matrix-izin';
                                             ?>
                                             <td>
-                                                <button type="button" class="matrix-status <?php echo $status_class; ?> <?php echo !empty($cell['foto']) ? 'view-attendance-photo' : ''; ?>"
-                                                    <?php if (!empty($cell['foto'])): ?>
-                                                        data-photo="<?php echo htmlspecialchars('uploads/absensi/' . $cell['foto'], ENT_QUOTES, 'UTF-8'); ?>"
-                                                        data-name="<?php echo htmlspecialchars($matrix_row['nama'] . ' - ' . $status_label, ENT_QUOTES, 'UTF-8'); ?>"
-                                                    <?php endif; ?>
-                                                    title="<?php echo !empty($cell['foto']) ? 'Klik untuk melihat foto' : $status_label; ?>">
-                                                    <?php echo $status_label; ?>
-                                                </button>
+                                                <?php if ($status_code === 1 || $status_code === 2): ?>
+                                                    <button type="button" class="matrix-status <?php echo $status_class; ?> <?php echo !empty($cell['foto']) ? 'view-attendance-photo' : ''; ?>"
+                                                        <?php if (!empty($cell['foto'])): ?>
+                                                            data-photo="<?php echo htmlspecialchars('uploads/absensi/' . $cell['foto'], ENT_QUOTES, 'UTF-8'); ?>"
+                                                            data-name="<?php echo htmlspecialchars($matrix_row['nama'] . ' - ' . $status_label, ENT_QUOTES, 'UTF-8'); ?>"
+                                                        <?php endif; ?>
+                                                        title="<?php echo !empty($cell['foto']) ? 'Klik untuk melihat foto' : $status_label; ?>">
+                                                        <?php echo $status_label; ?>
+                                                    </button>
+                                                <?php endif; ?>
                                             </td>
                                         <?php endforeach; ?>
                                     </tr>
