@@ -84,6 +84,7 @@ if ($_SESSION["level"] != 'Admin' and $_SESSION["level"] != 'admin') {
                                 <th>No</th>
                                 <th>Nama</th>
                                 <th>Perusahaan</th>
+                                <th>Foto</th>
                                 <th>Status</th>
                                 <th>Waktu</th>
                                 <th>Hari</th>
@@ -115,14 +116,19 @@ if ($_SESSION["level"] != 'Admin' and $_SESSION["level"] != 'admin') {
                                     <td><?php echo $data['nama']; ?></td>
                                     <td><?php echo $data['perusahaan']; ?></td>
                                     <td>
-                                        <?php if ((int) ($data['status_code'] ?? 0) === 1 && !empty($data['foto'])): ?>
-                                            <button type="button" class="view-attendance-photo btn btn-success btn-circle"
+                                        <?php if (!empty($data['foto'])): ?>
+                                            <img src="<?php echo htmlspecialchars('uploads/absensi/' . $data['foto'], ENT_QUOTES, 'UTF-8'); ?>"
+                                                alt="Foto absensi <?php echo htmlspecialchars($data['nama'], ENT_QUOTES, 'UTF-8'); ?>"
+                                                class="attendance-photo-thumb view-attendance-photo"
                                                 data-photo="<?php echo htmlspecialchars('uploads/absensi/' . $data['foto'], ENT_QUOTES, 'UTF-8'); ?>"
                                                 data-name="<?php echo htmlspecialchars($data['nama'], ENT_QUOTES, 'UTF-8'); ?>"
-                                                title="Lihat foto absensi">
-                                                <i class="fa fa-check"></i>
-                                            </button>
-                                        <?php elseif ((int) ($data['status_code'] ?? 0) === 1): ?>
+                                                title="Klik untuk melihat foto">
+                                        <?php else: ?>
+                                            <span class="text-muted">Tidak ada foto</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <?php if ((int) ($data['status_code'] ?? 0) === 1): ?>
                                             <span class="label label-success"><i class="fa fa-check"></i> Hadir</span>
                                         <?php else: ?>
                                             <span><?php echo htmlspecialchars($data['status'], ENT_QUOTES, 'UTF-8'); ?></span>
@@ -158,6 +164,21 @@ if ($_SESSION["level"] != 'Admin' and $_SESSION["level"] != 'admin') {
     </div>
 </div><!--/.row-->
 
+<style>
+    .attendance-photo-thumb {
+        width: 80px;
+        height: 80px;
+        border-radius: 6px;
+        object-fit: cover;
+        cursor: pointer;
+        transition: transform .2s ease, box-shadow .2s ease;
+    }
+
+    .attendance-photo-thumb:hover {
+        transform: scale(1.04);
+        box-shadow: 0 4px 12px rgba(15, 23, 42, .2);
+    }
+</style>
 
 <!-- Modal -->
 <div class="modal fade" id="modal">
