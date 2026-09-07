@@ -28,6 +28,22 @@ if ($username !== $username_db) {
     exit;
 }
 
+$current = $_GET['page'] ?? 'beranda';
+$presence_session_id = session_id();
+$presence_stmt = $kon->prepare("INSERT INTO tbl_pengunjung (session_id, kode_pengguna, username, level, halaman, ip_address, last_seen)
+    VALUES (?, ?, ?, ?, ?, ?, NOW())
+    ON DUPLICATE KEY UPDATE kode_pengguna=VALUES(kode_pengguna), username=VALUES(username), level=VALUES(level), halaman=VALUES(halaman), ip_address=VALUES(ip_address), last_seen=NOW()");
+$presence_ip = $_SERVER['REMOTE_ADDR'] ?? '';
+$presence_level = $_SESSION['level'];
+$presence_stmt->bind_param("ssssss", $presence_session_id, $kode_pengguna, $username, $presence_level, $current, $presence_ip);
+$presence_stmt->execute();
+
+if (isset($_GET['presence']) && $_GET['presence'] === 'heartbeat') {
+    header('Content-Type: application/json');
+    echo json_encode(['status' => 'ok']);
+    exit;
+}
+
 // ========================= Site data (logo, etc) =========================
 $site = $kon->query("SELECT * FROM tbl_site LIMIT 1")->fetch_assoc();
 $logo          = $site['logo'] ?? 'logo.png';
@@ -52,7 +68,6 @@ $allowed_pages = [
 ];
 
 // ========================= Guard for siswa location permission =========================
-$current = $_GET['page'] ?? 'beranda';
 if (strtolower($_SESSION['level']) === 'siswa' && !in_array($current, ['verify_lokasi', 'lokasi_denied'])) {
     if (empty($_SESSION['location_allowed'])) {
         header("Location: index.php?page=verify_lokasi");
@@ -85,6 +100,11 @@ function is_active($key, $current)
 
     <!-- ============ jQuery (must be before Bootstrap) ============ -->
     <script src="template/js/jquery-2.2.3.min.js"></script>
+    <script>
+        setInterval(function() {
+            fetch('index.php?page=<?php echo rawurlencode($current); ?>&presence=heartbeat', { credentials: 'same-origin' });
+        }, 60000);
+    </script>
 
     <style>
         :root {

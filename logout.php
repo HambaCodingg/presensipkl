@@ -1,6 +1,13 @@
 <?php
 //Memulai session
 session_start();
+require_once 'config/database.php';
+
+$presence_session_id = session_id();
+$presence_stmt = $kon->prepare("DELETE FROM tbl_pengunjung WHERE session_id = ?");
+$presence_stmt->bind_param("s", $presence_session_id);
+$presence_stmt->execute();
+
 //Set session
 $id_pengguna = $_SESSION['id_pengguna'];
 $_SESSION['id_pengguna'] = '';

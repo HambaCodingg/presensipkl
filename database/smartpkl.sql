@@ -24,6 +24,22 @@ SET time_zone = "+00:00";
 -- --------------------------------------------------------
 
 --
+-- Struktur dari tabel `tbl_pengunjung`
+--
+
+CREATE TABLE `tbl_pengunjung` (
+  `session_id` varchar(128) NOT NULL,
+  `kode_pengguna` varchar(4) DEFAULT NULL,
+  `username` varchar(255) DEFAULT NULL,
+  `level` varchar(50) DEFAULT NULL,
+  `halaman` varchar(100) DEFAULT NULL,
+  `ip_address` varchar(45) DEFAULT NULL,
+  `last_seen` datetime NOT NULL,
+  PRIMARY KEY (`session_id`),
+  KEY `idx_pengunjung_last_seen` (`last_seen`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
 -- Struktur dari tabel `tbl_absensi`
 --
 

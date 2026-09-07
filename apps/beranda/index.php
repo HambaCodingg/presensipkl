@@ -18,6 +18,18 @@ include 'config/database.php';
 $query = mysqli_query($kon, "SELECT * FROM tbl_site LIMIT 1");
 $row = mysqli_fetch_array($query);
 
+$visitor_query = null;
+if (strtolower($_SESSION['level']) === 'admin') {
+    $visitor_query = mysqli_query($kon, "
+        SELECT username, level, halaman, ip_address, last_seen,
+            CASE WHEN last_seen >= DATE_SUB(NOW(), INTERVAL 5 MINUTE) THEN 1 ELSE 0 END AS sedang_aktif
+        FROM tbl_pengunjung
+        WHERE last_seen >= DATE_SUB(NOW(), INTERVAL 1 DAY)
+        ORDER BY sedang_aktif DESC, last_seen DESC
+        LIMIT 20
+    ");
+}
+
 // Statistik presensi PKL untuk siswa yang masih berada dalam periode PKL.
 $statistik_query = mysqli_query($kon, "
     SELECT
@@ -173,6 +185,52 @@ usort($podium_bulanan, function ($a, $b) {
                         Dunia Usaha / Dunia Industri (DU/DI) mitra <strong><?php echo $row['nama_instansi']; ?></strong>.
                         Gunakan dengan tertib dan sesuai prosedur.
                     </p>
+
+                    <?php if ($visitor_query): ?>
+                        <div class="visitor-section">
+                            <div class="visitor-heading">
+                                <div>
+                                    <h5><i class="fa fa-eye"></i> Visitor Website</h5>
+                                    <small>Akun yang mengakses website dalam 24 jam terakhir</small>
+                                </div>
+                                <span class="visitor-live"><i class="fa fa-circle"></i> Aktif 5 menit terakhir</span>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-hover visitor-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Status</th>
+                                            <th>Akun</th>
+                                            <th>Level</th>
+                                            <th>Halaman terakhir</th>
+                                            <th>Terakhir aktif</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php if (mysqli_num_rows($visitor_query) > 0): ?>
+                                            <?php while ($visitor = mysqli_fetch_assoc($visitor_query)): ?>
+                                                <tr>
+                                                    <td>
+                                                        <?php if ((int) $visitor['sedang_aktif'] === 1): ?>
+                                                            <span class="visitor-status is-online"><i class="fa fa-circle"></i> Aktif</span>
+                                                        <?php else: ?>
+                                                            <span class="visitor-status is-away"><i class="fa fa-circle"></i> Tidak aktif</span>
+                                                        <?php endif; ?>
+                                                    </td>
+                                                    <td><strong><?php echo htmlspecialchars($visitor['username'] ?: $visitor['kode_pengguna'], ENT_QUOTES, 'UTF-8'); ?></strong></td>
+                                                    <td><?php echo htmlspecialchars($visitor['level'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                                    <td><?php echo htmlspecialchars($visitor['halaman'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                                    <td><?php echo htmlspecialchars($visitor['last_seen'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                                </tr>
+                                            <?php endwhile; ?>
+                                        <?php else: ?>
+                                            <tr><td colspan="5" class="empty-arrivals">Belum ada data visitor.</td></tr>
+                                        <?php endif; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    <?php endif; ?>
 
                     <!-- STATISTIK PRESENSI HARI INI -->
                     <div class="dashboard-section">
@@ -478,6 +536,47 @@ usort($podium_bulanan, function ($a, $b) {
                         background: linear-gradient(135deg, #f8fbff, #ffffff);
                     }
 
+                    .visitor-section {
+                        margin: 1.5rem 0 2rem;
+                        padding: 1.25rem;
+                        border: 1px solid rgba(15, 118, 110, .2);
+                        border-radius: 18px;
+                        background: #f8fffd;
+                    }
+
+                    .visitor-heading {
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        gap: 1rem;
+                        margin-bottom: .75rem;
+                    }
+
+                    .visitor-heading h5 {
+                        margin: 0;
+                        color: #134e4a;
+                        font-weight: 700;
+                    }
+
+                    .visitor-heading small { color: #64748b; }
+                    .visitor-live { color: #0f766e; font-size: .8rem; white-space: nowrap; }
+                    .visitor-live i,
+                    .visitor-status i { font-size: .55rem; vertical-align: middle; }
+                    .visitor-status { white-space: nowrap; font-size: .8rem; font-weight: 600; }
+                    .is-online { color: #059669; }
+                    .is-away { color: #94a3b8; }
+
+                    .visitor-table {
+                        margin: 0;
+                        background: #ffffff;
+                    }
+
+                    .visitor-table th {
+                        color: #64748b;
+                        font-size: .78rem;
+                        text-transform: uppercase;
+                    }
+
                     .dashboard-section-heading,
                     .early-arrivals-heading {
                         display: flex;
@@ -740,6 +839,15 @@ usort($podium_bulanan, function ($a, $b) {
 
                         .dashboard-section {
                             padding: .85rem;
+                        }
+
+                        .visitor-section {
+                            padding: .85rem;
+                        }
+
+                        .visitor-heading {
+                            align-items: flex-start;
+                            flex-direction: column;
                         }
 
                         .dashboard-section-heading,
