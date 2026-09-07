@@ -59,7 +59,14 @@ if (isset($_POST['submit'])) {
             $kode_gagal = $waktu_sekarang > $jam_masuk_datetime ? 'terlambat' : 'gagal';
             if ($is_ajax) {
                 header('Content-Type: application/json');
-                echo json_encode(['status' => 'error', 'redirect' => '../../index.php?page=absen&mulai=' . $kode_gagal]);
+                echo json_encode([
+                    'status' => 'error',
+                    'code' => $kode_gagal,
+                    'message' => $kode_gagal === 'terlambat'
+                        ? 'Maaf, Anda telat. Tolong hubungi pihak terkait.'
+                        : 'Rentang waktu absensi belum dimulai atau sudah berakhir.',
+                    'redirect' => '../../index.php?page=absen&mulai=' . $kode_gagal
+                ]);
             } else {
                 header("Location:../../index.php?page=absen&mulai={$kode_gagal}");
             }
@@ -127,11 +134,18 @@ if (isset($_POST['submit'])) {
             mysqli_query($kon, "ROLLBACK");
             if ($is_ajax) {
                 header('Content-Type: application/json');
-                $kode_gagal = $waktu_sekarang > $jam_masuk_siswa ? 'terlambat' : 'gagal';
-                echo json_encode(['status' => 'error', 'redirect' => '../../index.php?page=absen&mulai=' . $kode_gagal]);
+                $kode_gagal = $waktu_sekarang > $jam_masuk_datetime ? 'terlambat' : 'gagal';
+                echo json_encode([
+                    'status' => 'error',
+                    'code' => $kode_gagal,
+                    'message' => $kode_gagal === 'terlambat'
+                        ? 'Maaf, Anda telat. Tolong hubungi pihak terkait.'
+                        : 'Gagal melakukan absensi.',
+                    'redirect' => '../../index.php?page=absen&mulai=' . $kode_gagal
+                ]);
                 exit;
             } else {
-                $kode_gagal = $waktu_sekarang > $jam_masuk_siswa ? 'terlambat' : 'gagal';
+                $kode_gagal = $waktu_sekarang > $jam_masuk_datetime ? 'terlambat' : 'gagal';
                 header("Location:../../index.php?page=absen&mulai={$kode_gagal}");
             }
         }
@@ -384,7 +398,10 @@ $absensi_sudah = ($data['jml'] > 0) ? "disabled" : "";
                     }
                 });
             }).then(function(json) {
-                if (json && json.redirect) {
+                if (json && json.code === 'terlambat') {
+                    alert('Maaf, Anda telat. Tolong hubungi pihak terkait.');
+                    $('#modal').modal('hide');
+                } else if (json && json.redirect) {
                     window.location = json.redirect;
                 } else if (json && json.status === 'ok') {
                     window.location = '../../index.php?page=absen&mulai=berhasil';
