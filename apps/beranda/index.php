@@ -47,7 +47,8 @@ $statistik = mysqli_fetch_assoc($statistik_query) ?: [
 
 $tepat_hari_ini = [];
 $tepat_hari_ini_query = mysqli_query($kon, "
-    SELECT s.nama, s.perusahaan, s.jam_masuk, a.waktu
+    SELECT s.nama, s.perusahaan, s.jam_masuk, a.waktu,
+        TIME_TO_SEC(TIMEDIFF(COALESCE(s.jam_masuk, '08:00:00'), a.waktu)) AS selisih_awal
     FROM tbl_absensi a
     INNER JOIN tbl_siswa s ON s.id_siswa = a.id_siswa
     WHERE a.tanggal = CURDATE()
@@ -55,7 +56,7 @@ $tepat_hari_ini_query = mysqli_query($kon, "
         AND a.waktu IS NOT NULL
         AND s.mulai_pkl <= CURDATE()
         AND s.akhir_pkl >= CURDATE()
-    ORDER BY s.jam_masuk ASC, a.waktu ASC, s.nama ASC
+    ORDER BY selisih_awal DESC, a.waktu ASC, s.nama ASC
 ");
 if ($tepat_hari_ini_query) {
     while ($tepat = mysqli_fetch_assoc($tepat_hari_ini_query)) {
@@ -63,22 +64,27 @@ if ($tepat_hari_ini_query) {
     }
 }
 usort($tepat_hari_ini, function ($a, $b) {
-    return strcmp($a['waktu'], $b['waktu']) ?: strcasecmp($a['nama'], $b['nama']);
+    return (int) $b['selisih_awal'] <=> (int) $a['selisih_awal']
+        ?: strcmp($a['waktu'], $b['waktu'])
+        ?: strcasecmp($a['nama'], $b['nama']);
 });
 
 $rekap_bulanan_query = mysqli_query($kon, "
     SELECT a.id_siswa, s.nama, s.perusahaan,
         COALESCE(s.jam_masuk, '08:00:00') AS jam_masuk,
-        a.tanggal, a.waktu
+        a.tanggal, a.waktu,
+        TIME_TO_SEC(TIMEDIFF(COALESCE(s.jam_masuk, '08:00:00'), a.waktu)) AS selisih_awal
     FROM tbl_absensi a
     INNER JOIN tbl_siswa s ON s.id_siswa = a.id_siswa
     WHERE a.tanggal >= DATE_FORMAT(CURDATE(), '%Y-%m-01')
         AND a.tanggal <= CURDATE()
         AND a.status = 1
         AND a.waktu IS NOT NULL
+        AND TIME(a.waktu) <= COALESCE(s.jam_masuk, '08:00:00')
+        AND TIME(a.waktu) <= COALESCE(s.jam_masuk, '08:00:00')
         AND s.mulai_pkl <= a.tanggal
         AND s.akhir_pkl >= a.tanggal
-    ORDER BY a.tanggal ASC, s.jam_masuk ASC, a.waktu ASC, s.nama ASC
+    ORDER BY a.tanggal ASC, selisih_awal DESC, a.waktu ASC, s.nama ASC
 ");
 
 $pemenang_harian_bulanan = [];
@@ -88,17 +94,17 @@ if ($rekap_bulanan_query) {
 
         if (!isset($pemenang_harian_bulanan[$kunci_harian])) {
             $pemenang_harian_bulanan[$kunci_harian] = [
-                'waktu' => $rekap['waktu'],
+                'selisih_awal' => (int) $rekap['selisih_awal'],
                 'siswa' => []
             ];
         }
 
-        if ($rekap['waktu'] < $pemenang_harian_bulanan[$kunci_harian]['waktu']) {
-            $pemenang_harian_bulanan[$kunci_harian]['waktu'] = $rekap['waktu'];
+        if ((int) $rekap['selisih_awal'] > $pemenang_harian_bulanan[$kunci_harian]['selisih_awal']) {
+            $pemenang_harian_bulanan[$kunci_harian]['selisih_awal'] = (int) $rekap['selisih_awal'];
             $pemenang_harian_bulanan[$kunci_harian]['siswa'] = [];
         }
 
-        if ($rekap['waktu'] === $pemenang_harian_bulanan[$kunci_harian]['waktu']) {
+        if ((int) $rekap['selisih_awal'] === $pemenang_harian_bulanan[$kunci_harian]['selisih_awal']) {
             $pemenang_harian_bulanan[$kunci_harian]['siswa'][$rekap['id_siswa']] = $rekap;
         }
     }
@@ -232,7 +238,7 @@ usort($podium_bulanan, function ($a, $b) {
                             <div class="early-arrivals-heading">
                                 <div>
                                     <h5><i class="fa fa-trophy"></i> Podium Hadir Paling Awal Hari Ini</h5>
-                                    <small>Waktu aktual dibandingkan di dalam kelompok target masuk yang sama</small>
+                                    <small>Peringkat berdasarkan selisih paling awal dari jadwal masuk masing-masing siswa</small>
                                 </div>
                                 <span><?php echo (int) $statistik['hadir']; ?> siswa hadir</span>
                             </div>
@@ -243,7 +249,7 @@ usort($podium_bulanan, function ($a, $b) {
                                             <div class="podium-medal"><i class="fa fa-trophy"></i></div>
                                             <strong><?php echo htmlspecialchars($awal['nama'], ENT_QUOTES, 'UTF-8'); ?></strong>
                                             <small><?php echo htmlspecialchars($awal['perusahaan'], ENT_QUOTES, 'UTF-8'); ?></small>
-                                            <span class="podium-time">Absen <?php echo htmlspecialchars($awal['waktu'], ENT_QUOTES, 'UTF-8'); ?></span>
+                                            <span class="podium-time">Absen <?php echo htmlspecialchars($awal['waktu'], ENT_QUOTES, 'UTF-8'); ?>, <?php echo floor((int) $awal['selisih_awal'] / 60); ?> menit lebih awal</span>
                                             <div class="podium-block"><b><?php echo $nomor + 1; ?></b></div>
                                         </div>
                                     <?php endforeach; ?>
@@ -257,7 +263,7 @@ usort($podium_bulanan, function ($a, $b) {
                             <div class="early-arrivals-heading">
                                 <div>
                                     <h5><i class="fa fa-calendar"></i> Podium Hadir Paling Awal Bulan Ini</h5>
-                                    <small>Peringkat berdasarkan jumlah kemenangan waktu paling awal per hari</small>
+                                    <small>Peringkat berdasarkan jumlah kemenangan datang paling awal per hari</small>
                                 </div>
                                 <span><?php echo date('F Y'); ?></span>
                             </div>
