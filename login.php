@@ -31,6 +31,9 @@ function rememberLogin($kon, $id_user)
     $token = bin2hex(random_bytes(32));
     $token_hash = hash('sha256', $token);
     $stmt = $kon->prepare("UPDATE tbl_user SET remember_token_hash = ? WHERE id_user = ?");
+    if (!$stmt) {
+        return;
+    }
     $stmt->bind_param("si", $token_hash, $id_user);
     $stmt->execute();
     setcookie('remember_login', $token, [
@@ -46,10 +49,13 @@ function rememberLogin($kon, $id_user)
 if (empty($_SESSION['kode_pengguna']) && !empty($_COOKIE['remember_login'])) {
     $token_hash = hash('sha256', $_COOKIE['remember_login']);
     $stmt = $kon->prepare("SELECT * FROM tbl_user WHERE remember_token_hash = ? LIMIT 1");
-    $stmt->bind_param("s", $token_hash);
-    $stmt->execute();
-    $token_result = $stmt->get_result();
-    $token_user = $token_result->fetch_assoc();
+    $token_user = null;
+    if ($stmt) {
+        $stmt->bind_param("s", $token_hash);
+        $stmt->execute();
+        $token_result = $stmt->get_result();
+        $token_user = $token_result->fetch_assoc();
+    }
 
     if ($token_user) {
         if (strtolower($token_user['level']) === 'siswa') {

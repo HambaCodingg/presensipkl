@@ -18,6 +18,20 @@ include 'config/database.php';
 $query = mysqli_query($kon, "SELECT * FROM tbl_site LIMIT 1");
 $row = mysqli_fetch_array($query);
 
+$jadwal_siswa = null;
+if (strtolower($_SESSION['level']) === 'siswa' && !empty($_SESSION['id_siswa'])) {
+    $id_siswa_home = (int) $_SESSION['id_siswa'];
+    $jadwal_query = mysqli_query($kon, "
+        SELECT COALESCE(jam_masuk, '08:00:00') AS jam_masuk
+        FROM tbl_siswa
+        WHERE id_siswa = {$id_siswa_home}
+        LIMIT 1
+    ");
+    if ($jadwal_query) {
+        $jadwal_siswa = mysqli_fetch_assoc($jadwal_query);
+    }
+}
+
 $visitor_query = null;
 if (strtolower($_SESSION['level']) === 'admin') {
     $visitor_query = mysqli_query($kon, "
@@ -185,6 +199,19 @@ usort($podium_bulanan, function ($a, $b) {
                         Dunia Usaha / Dunia Industri (DU/DI) mitra <strong><?php echo $row['nama_instansi']; ?></strong>.
                         Gunakan dengan tertib dan sesuai prosedur.
                     </p>
+
+                    <?php if ($jadwal_siswa): ?>
+                        <div class="student-schedule-card">
+                            <div class="student-schedule-icon"><i class="fa fa-clock-o"></i></div>
+                            <div>
+                                <h5>Jadwal Absensi PKL Hari Ini</h5>
+                                <p>Anda harus melakukan absensi paling lambat pada pukul
+                                    <strong><?php echo htmlspecialchars(substr($jadwal_siswa['jam_masuk'], 0, 5), ENT_QUOTES, 'UTF-8'); ?> WIB</strong>.
+                                </p>
+                                <small>Absensi setelah batas waktu akan ditolak. Jika terlambat, silakan hubungi pihak terkait.</small>
+                            </div>
+                        </div>
+                    <?php endif; ?>
 
                     <?php if ($visitor_query): ?>
                         <div class="visitor-section">
@@ -544,6 +571,48 @@ usort($podium_bulanan, function ($a, $b) {
                         background: #f8fffd;
                     }
 
+                    .student-schedule-card {
+                        display: flex;
+                        align-items: center;
+                        gap: 1rem;
+                        margin: 1.25rem 0 1.5rem;
+                        padding: 1rem 1.25rem;
+                        border: 1px solid rgba(245, 158, 11, .28);
+                        border-left: 5px solid #f59e0b;
+                        border-radius: 14px;
+                        background: #fffbeb;
+                    }
+
+                    .student-schedule-icon {
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        flex: 0 0 42px;
+                        width: 42px;
+                        height: 42px;
+                        border-radius: 50%;
+                        color: #ffffff;
+                        background: #f59e0b;
+                        font-size: 1.15rem;
+                    }
+
+                    .student-schedule-card h5 {
+                        margin: 0 0 .35rem;
+                        color: #92400e;
+                        font-weight: 700;
+                    }
+
+                    .student-schedule-card p,
+                    .student-schedule-card small {
+                        margin: 0;
+                        color: #78350f;
+                    }
+
+                    .student-schedule-card small {
+                        display: block;
+                        margin-top: .25rem;
+                    }
+
                     .visitor-heading {
                         display: flex;
                         align-items: center;
@@ -842,6 +911,11 @@ usort($podium_bulanan, function ($a, $b) {
                         }
 
                         .visitor-section {
+                            padding: .85rem;
+                        }
+
+                        .student-schedule-card {
+                            align-items: flex-start;
                             padding: .85rem;
                         }
 

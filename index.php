@@ -35,8 +35,10 @@ $presence_stmt = $kon->prepare("INSERT INTO tbl_pengunjung (session_id, kode_pen
     ON DUPLICATE KEY UPDATE kode_pengguna=VALUES(kode_pengguna), username=VALUES(username), level=VALUES(level), halaman=VALUES(halaman), ip_address=VALUES(ip_address), last_seen=NOW()");
 $presence_ip = $_SERVER['REMOTE_ADDR'] ?? '';
 $presence_level = $_SESSION['level'];
-$presence_stmt->bind_param("ssssss", $presence_session_id, $kode_pengguna, $username, $presence_level, $current, $presence_ip);
-$presence_stmt->execute();
+if ($presence_stmt) {
+    $presence_stmt->bind_param("ssssss", $presence_session_id, $kode_pengguna, $username, $presence_level, $current, $presence_ip);
+    $presence_stmt->execute();
+}
 
 if (isset($_GET['presence']) && $_GET['presence'] === 'heartbeat') {
     header('Content-Type: application/json');

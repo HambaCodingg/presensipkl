@@ -5,14 +5,18 @@ require_once 'config/database.php';
 
 $presence_session_id = session_id();
 $presence_stmt = $kon->prepare("DELETE FROM tbl_pengunjung WHERE session_id = ?");
-$presence_stmt->bind_param("s", $presence_session_id);
-$presence_stmt->execute();
+if ($presence_stmt) {
+	$presence_stmt->bind_param("s", $presence_session_id);
+	$presence_stmt->execute();
+}
 
 if (!empty($_SESSION['id_pengguna'])) {
 	$id_pengguna = (int) $_SESSION['id_pengguna'];
 	$remember_stmt = $kon->prepare("UPDATE tbl_user SET remember_token_hash = NULL WHERE id_user = ?");
-	$remember_stmt->bind_param("i", $id_pengguna);
-	$remember_stmt->execute();
+	if ($remember_stmt) {
+		$remember_stmt->bind_param("i", $id_pengguna);
+		$remember_stmt->execute();
+	}
 }
 setcookie('remember_login', '', time() - 3600, '/');
 
