@@ -39,6 +39,7 @@ if (isset($_POST['tambah_siswa'])) {
         $nis         = input($_POST["nis"]);
         $mulai_pkl   = input($_POST["mulai_pkl"]);
         $akhir_pkl   = input($_POST["akhir_pkl"]);
+        $jam_masuk   = input($_POST["jam_masuk"]);
         $no_telp     = input($_POST["no_telp"]);
         $alamat      = input($_POST["alamat"]);
         $email       = input($_POST["email"]);
@@ -107,8 +108,8 @@ if (isset($_POST['tambah_siswa'])) {
         $simpan_pengguna = mysqli_query($kon, $sql_user) or die("Error USER: " . mysqli_error($kon));
 
         // ================== Insert ke tbl_siswa ==================
-        $sql_siswa = "INSERT INTO tbl_siswa (kode_siswa, nama, perusahaan, jurusan, nis, mulai_pkl, akhir_pkl, alamat, no_telp, foto) 
-                      VALUES ('$kode_pengguna','$nama','$perusahaan','$jurusan','$nis','$mulai_pkl','$akhir_pkl','$alamat','$no_telp','$foto')";
+        $sql_siswa = "INSERT INTO tbl_siswa (kode_siswa, nama, perusahaan, jurusan, nis, mulai_pkl, akhir_pkl, jam_masuk, alamat, no_telp, foto)
+                  VALUES ('$kode_pengguna','$nama','$perusahaan','$jurusan','$nis','$mulai_pkl','$akhir_pkl','$jam_masuk','$alamat','$no_telp','$foto')";
         $simpan_siswa = mysqli_query($kon, $sql_siswa) or die("Error SISWA: " . mysqli_error($kon));
 
         // ================== Commit / Rollback ==================
@@ -161,6 +162,13 @@ if (isset($_POST['tambah_siswa'])) {
             <div class="form-group">
                 <label>Akhir PKL :</label>
                 <input type="date" name="akhir_pkl" class="form-control" required>
+            </div>
+        </div>
+        <div class="col-sm-6">
+            <div class="form-group">
+                <label>Jam Masuk Siswa :</label>
+                <input type="time" name="jam_masuk" class="form-control" value="08:00" required>
+                <small class="text-muted">Digunakan untuk menentukan tepat waktu atau terlambat.</small>
             </div>
         </div>
     </div>

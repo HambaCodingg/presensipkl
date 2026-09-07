@@ -21,9 +21,50 @@ if (isset($_POST['submit'])) {
     if ($_SERVER["REQUEST_METHOD"] == "POST") {
         mysqli_query($kon, "START TRANSACTION");
 
+        // Batas waktu PKL mengikuti jadwal masuk masing-masing siswa.
+        $siswa_query = mysqli_query($kon, "
+            SELECT COALESCE(jam_masuk, '08:00:00') AS jam_masuk
+            FROM tbl_siswa
+            WHERE id_siswa = '$id_siswa'
+            LIMIT 1
+        ");
+        $siswa = mysqli_fetch_assoc($siswa_query);
+        $jam_masuk_siswa = $siswa['jam_masuk'] ?? '08:00:00';
+
         // Upload foto absensi (support normal file upload or blob sent via AJAX)
         $foto_baru = null;
         $is_ajax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest';
+
+        // Validasi waktu sebelum file dipindahkan agar percobaan terlambat
+        // tidak meninggalkan file foto yang tidak terpakai.
+        $cek_waktu = "
+            SELECT
+                CONCAT(CURDATE(), ' ', mulai_absen) AS mulai_absen,
+                CONCAT(CURDATE(), ' ', akhir_absen) AS akhir_absen,
+                NOW() AS waktu_sekarang
+            FROM tbl_setting_absensi
+            LIMIT 1
+        ";
+        $query = mysqli_query($kon, $cek_waktu);
+        $setting = mysqli_fetch_array($query);
+        $mulai_absen = $setting['mulai_absen'];
+        $akhir_absen = $setting['akhir_absen'];
+        $waktu_sekarang = $setting['waktu_sekarang'];
+        $jam_masuk_datetime = date('Y-m-d') . ' ' . $jam_masuk_siswa;
+        $batas_mulai = min($mulai_absen, $jam_masuk_datetime);
+        $batas_akhir = min($akhir_absen, $jam_masuk_datetime);
+
+        if ($waktu_sekarang < $batas_mulai || $waktu_sekarang > $batas_akhir) {
+            mysqli_query($kon, 'ROLLBACK');
+            $kode_gagal = $waktu_sekarang > $jam_masuk_datetime ? 'terlambat' : 'gagal';
+            if ($is_ajax) {
+                header('Content-Type: application/json');
+                echo json_encode(['status' => 'error', 'redirect' => '../../index.php?page=absen&mulai=' . $kode_gagal]);
+            } else {
+                header("Location:../../index.php?page=absen&mulai={$kode_gagal}");
+            }
+            exit;
+        }
 
         // If PHP received a file in $_FILES (standard upload)
         if (!empty($_FILES['foto']['name'])) {
@@ -46,23 +87,10 @@ if (isset($_POST['submit'])) {
             }
         }
 
-        // Cek jam absensi dari setting
-        $cek_waktu = "
-            SELECT 
-                CONCAT(CURDATE(), ' ', mulai_absen) as mulai_absen, 
-                CONCAT(CURDATE(), ' ', akhir_absen) as akhir_absen, 
-                NOW() as waktu_sekarang 
-            FROM tbl_setting_absensi 
-            LIMIT 1
-        ";
-        $query   = mysqli_query($kon, $cek_waktu);
-        $setting = mysqli_fetch_array($query);
-        $mulai_absen     = $setting["mulai_absen"];
-        $akhir_absen     = $setting["akhir_absen"];
-        $waktu_sekarang  = $setting["waktu_sekarang"];
-
         // Simpan absensi
-        if ($waktu_sekarang >= $mulai_absen && $waktu_sekarang <= $akhir_absen) {
+        // Jika ada siswa yang masuk lebih pagi dari jadwal umum, izinkan mulai
+        // dari jam masuk siswa tersebut. Batas akhir tetap milik siswa.
+        if ($waktu_sekarang >= $batas_mulai && $waktu_sekarang <= $batas_akhir) {
             $sql_absen = "
                 INSERT INTO tbl_absensi 
                     (id_siswa, status, foto, latitude, longitude, waktu, tanggal) 
@@ -99,10 +127,12 @@ if (isset($_POST['submit'])) {
             mysqli_query($kon, "ROLLBACK");
             if ($is_ajax) {
                 header('Content-Type: application/json');
-                echo json_encode(['status' => 'error', 'redirect' => '../../index.php?page=absen&mulai=gagal']);
+                $kode_gagal = $waktu_sekarang > $jam_masuk_siswa ? 'terlambat' : 'gagal';
+                echo json_encode(['status' => 'error', 'redirect' => '../../index.php?page=absen&mulai=' . $kode_gagal]);
                 exit;
             } else {
-                header("Location:../../index.php?page=absen&mulai=gagal");
+                $kode_gagal = $waktu_sekarang > $jam_masuk_siswa ? 'terlambat' : 'gagal';
+                header("Location:../../index.php?page=absen&mulai={$kode_gagal}");
             }
         }
     }

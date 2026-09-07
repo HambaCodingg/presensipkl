@@ -30,6 +30,7 @@ if (isset($_POST['edit_siswa'])) {
         $nis = input($_POST["nis"]);
         $mulai_pkl = input($_POST["mulai_pkl"]);
         $akhir_pkl = input($_POST["akhir_pkl"]);
+        $jam_masuk = input($_POST["jam_masuk"]);
         $no_telp = input($_POST["no_telp"]);
         $alamat = input($_POST["alamat"]);
 
@@ -81,6 +82,7 @@ if (isset($_POST['edit_siswa'])) {
                         nis='$nis',
                         mulai_pkl='$mulai_pkl',
                         akhir_pkl='$akhir_pkl',
+                        jam_masuk='$jam_masuk',
                         alamat='$alamat',
                         no_telp='$no_telp',
                         foto='$foto_baru_unik'
@@ -99,6 +101,7 @@ if (isset($_POST['edit_siswa'])) {
                     nis='$nis',
                     mulai_pkl='$mulai_pkl',
                     akhir_pkl='$akhir_pkl',
+                    jam_masuk='$jam_masuk',
                     no_telp='$no_telp',
                     alamat='$alamat'
                     WHERE id_siswa=$id_siswa";
@@ -182,6 +185,13 @@ $data = mysqli_fetch_array($hasil);
             <div class="form-group">
                 <label>No Telp :</label>
                 <input type="text" name="no_telp" class="form-control" placeholder="Masukan No Telp" value="<?php echo $data['no_telp']; ?>" required>
+            </div>
+        </div>
+        <div class="col-sm-6">
+            <div class="form-group">
+                <label>Jam Masuk Siswa :</label>
+                <input type="time" name="jam_masuk" class="form-control" value="<?php echo htmlspecialchars(substr($data['jam_masuk'] ?: '08:00:00', 0, 5), ENT_QUOTES, 'UTF-8'); ?>" required>
+                <small class="text-muted">Absensi sampai jam ini dihitung tepat waktu.</small>
             </div>
         </div>
     </div>

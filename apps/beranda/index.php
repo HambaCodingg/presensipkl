@@ -25,7 +25,9 @@ $statistik_query = mysqli_query($kon, "
         COALESCE(SUM(CASE WHEN a.status = 1 THEN 1 ELSE 0 END), 0) AS hadir,
         COALESCE(SUM(CASE WHEN a.status = 2 THEN 1 ELSE 0 END), 0) AS izin,
         COALESCE(SUM(CASE WHEN a.status = 3 THEN 1 ELSE 0 END), 0) AS tidak_hadir,
-        COALESCE(SUM(CASE WHEN a.id_absensi IS NULL THEN 1 ELSE 0 END), 0) AS belum_absen
+        COALESCE(SUM(CASE WHEN a.id_absensi IS NULL THEN 1 ELSE 0 END), 0) AS belum_absen,
+        COALESCE(SUM(CASE WHEN a.status = 1 AND TIME(a.waktu) <= COALESCE(s.jam_masuk, '08:00:00') THEN 1 ELSE 0 END), 0) AS tepat_waktu,
+        COALESCE(SUM(CASE WHEN a.status = 1 AND TIME(a.waktu) > COALESCE(s.jam_masuk, '08:00:00') THEN 1 ELSE 0 END), 0) AS terlambat
     FROM tbl_siswa s
     LEFT JOIN tbl_absensi a
         ON a.id_siswa = s.id_siswa
@@ -38,21 +40,62 @@ $statistik = mysqli_fetch_assoc($statistik_query) ?: [
     'hadir' => 0,
     'izin' => 0,
     'tidak_hadir' => 0,
-    'belum_absen' => 0
+    'belum_absen' => 0,
+    'tepat_waktu' => 0,
+    'terlambat' => 0
 ];
 
-$awal_query = mysqli_query($kon, "
-    SELECT s.nama, s.perusahaan, a.waktu
+$tepat_hari_ini = [];
+$tepat_hari_ini_query = mysqli_query($kon, "
+    SELECT s.nama, s.perusahaan, s.jam_masuk, a.waktu
     FROM tbl_absensi a
     INNER JOIN tbl_siswa s ON s.id_siswa = a.id_siswa
     WHERE a.tanggal = CURDATE()
         AND a.status = 1
         AND a.waktu IS NOT NULL
+        AND TIME(a.waktu) <= COALESCE(s.jam_masuk, '08:00:00')
         AND s.mulai_pkl <= CURDATE()
         AND s.akhir_pkl >= CURDATE()
-    ORDER BY a.waktu ASC, s.nama ASC
-    LIMIT 5
+    ORDER BY s.jam_masuk ASC, a.waktu ASC, s.nama ASC
 ");
+if ($tepat_hari_ini_query) {
+    while ($tepat = mysqli_fetch_assoc($tepat_hari_ini_query)) {
+        $jam_target = substr($tepat['jam_masuk'] ?: '08:00:00', 0, 5);
+        $tepat_hari_ini[$jam_target][] = $tepat;
+    }
+}
+
+$podium_bulanan = [];
+$rekap_bulanan_query = mysqli_query($kon, "
+    SELECT a.id_siswa, s.nama, s.perusahaan,
+        COALESCE(s.jam_masuk, '08:00:00') AS jam_masuk,
+        SUM(CASE WHEN TIME(a.waktu) <= COALESCE(s.jam_masuk, '08:00:00') THEN 1 ELSE 0 END) AS tepat_waktu,
+        SUM(CASE WHEN TIME(a.waktu) > COALESCE(s.jam_masuk, '08:00:00') THEN 1 ELSE 0 END) AS terlambat
+    FROM tbl_absensi a
+    INNER JOIN tbl_siswa s ON s.id_siswa = a.id_siswa
+    WHERE a.tanggal >= DATE_FORMAT(CURDATE(), '%Y-%m-01')
+        AND a.tanggal <= CURDATE()
+        AND a.status = 1
+        AND a.waktu IS NOT NULL
+        AND s.mulai_pkl <= a.tanggal
+        AND s.akhir_pkl >= a.tanggal
+    GROUP BY a.id_siswa, s.nama, s.perusahaan, s.jam_masuk
+    ORDER BY tepat_waktu DESC, terlambat ASC, s.nama ASC
+");
+if ($rekap_bulanan_query) {
+    while ($rekap = mysqli_fetch_assoc($rekap_bulanan_query)) {
+        $jam_target = substr($rekap['jam_masuk'], 0, 5);
+        $podium_bulanan[$jam_target][] = $rekap;
+    }
+}
+foreach ($podium_bulanan as &$daftar_pemenang) {
+    usort($daftar_pemenang, function ($a, $b) {
+        return (int) $b['tepat_waktu'] <=> (int) $a['tepat_waktu']
+            ?: (int) $a['terlambat'] <=> (int) $b['terlambat']
+            ?: strcasecmp($a['nama'], $b['nama']);
+    });
+}
+unset($daftar_pemenang);
 ?>
 
 <div class="container-fluid px-3">
@@ -141,40 +184,91 @@ $awal_query = mysqli_query($kon, "
                                     <strong><?php echo (int) $statistik['tidak_hadir']; ?></strong>
                                 </div>
                             </div>
+                            <div class="col-sm-6 col-md-3">
+                                <div class="stat-card stat-on-time">
+                                    <span class="stat-icon"><i class="fa fa-check-circle"></i></span>
+                                    <span class="stat-label">Tepat Waktu</span>
+                                    <strong><?php echo (int) $statistik['tepat_waktu']; ?></strong>
+                                </div>
+                            </div>
+                            <div class="col-sm-6 col-md-3">
+                                <div class="stat-card stat-late">
+                                    <span class="stat-icon"><i class="fa fa-exclamation-triangle"></i></span>
+                                    <span class="stat-label">Terlambat</span>
+                                    <strong><?php echo (int) $statistik['terlambat']; ?></strong>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="early-arrivals">
                             <div class="early-arrivals-heading">
-                                <h5><i class="fa fa-trophy"></i> Datang Paling Awal</h5>
+                                <div>
+                                    <h5><i class="fa fa-trophy"></i> Podium Tepat Waktu Hari Ini</h5>
+                                    <small>Dipisahkan berdasarkan target jam masuk siswa</small>
+                                </div>
                                 <span><?php echo (int) $statistik['hadir']; ?> siswa hadir</span>
                             </div>
-                            <?php if ($awal_query && mysqli_num_rows($awal_query) > 0): ?>
-                                <div class="table-responsive">
-                                    <table class="table table-hover early-arrivals-table">
-                                        <thead>
-                                            <tr>
-                                                <th>#</th>
-                                                <th>Nama Siswa</th>
-                                                <th>Perusahaan</th>
-                                                <th>Waktu</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <?php $nomor_awal = 0; ?>
-                                            <?php while ($awal = mysqli_fetch_assoc($awal_query)): ?>
-                                                <?php $nomor_awal++; ?>
-                                                <tr>
-                                                    <td><span class="arrival-rank"><?php echo $nomor_awal; ?></span></td>
-                                                    <td><?php echo htmlspecialchars($awal['nama'], ENT_QUOTES, 'UTF-8'); ?></td>
-                                                    <td><?php echo htmlspecialchars($awal['perusahaan'], ENT_QUOTES, 'UTF-8'); ?></td>
-                                                    <td><strong><?php echo htmlspecialchars($awal['waktu'], ENT_QUOTES, 'UTF-8'); ?></strong></td>
-                                                </tr>
-                                            <?php endwhile; ?>
-                                        </tbody>
-                                    </table>
+                            <?php if (!empty($tepat_hari_ini)): ?>
+                                <div class="podium-groups">
+                                    <?php ksort($tepat_hari_ini); ?>
+                                    <?php foreach ($tepat_hari_ini as $jam => $daftar_siswa): ?>
+                                        <?php
+                                        usort($daftar_siswa, function ($a, $b) {
+                                            return strcmp($a['waktu'], $b['waktu']) ?: strcasecmp($a['nama'], $b['nama']);
+                                        });
+                                        $daftar_siswa = array_slice($daftar_siswa, 0, 3);
+                                        ?>
+                                        <div class="podium-group">
+                                            <div class="podium-group-title"><i class="fa fa-clock-o"></i> Target masuk <?php echo htmlspecialchars($jam, ENT_QUOTES, 'UTF-8'); ?></div>
+                                            <div class="podium-stage">
+                                                <?php foreach ($daftar_siswa as $nomor => $awal): ?>
+                                                    <div class="podium-place place-<?php echo $nomor + 1; ?>">
+                                                        <div class="podium-medal"><i class="fa fa-trophy"></i></div>
+                                                        <strong><?php echo htmlspecialchars($awal['nama'], ENT_QUOTES, 'UTF-8'); ?></strong>
+                                                        <small><?php echo htmlspecialchars($awal['perusahaan'], ENT_QUOTES, 'UTF-8'); ?></small>
+                                                        <span class="podium-time">Absen <?php echo htmlspecialchars($awal['waktu'], ENT_QUOTES, 'UTF-8'); ?></span>
+                                                        <div class="podium-block"><b><?php echo $nomor + 1; ?></b></div>
+                                                    </div>
+                                                <?php endforeach; ?>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
                                 </div>
                             <?php else: ?>
                                 <div class="empty-arrivals"><i class="fa fa-info-circle"></i> Belum ada siswa yang melakukan presensi hari ini.</div>
+                            <?php endif; ?>
+                        </div>
+
+                        <div class="monthly-arrivals">
+                            <div class="early-arrivals-heading">
+                                <div>
+                                    <h5><i class="fa fa-calendar"></i> Podium Ketepatan Waktu Bulan Ini</h5>
+                                    <small>Peringkat berdasarkan jumlah hari tepat waktu</small>
+                                </div>
+                                <span><?php echo date('F Y'); ?></span>
+                            </div>
+                            <?php if (!empty($podium_bulanan)): ?>
+                                <div class="monthly-podium-groups">
+                                    <?php ksort($podium_bulanan); ?>
+                                    <?php foreach ($podium_bulanan as $jam => $daftar_pemenang): ?>
+                                        <div class="monthly-podium-group">
+                                            <div class="podium-group-title"><i class="fa fa-clock-o"></i> Target masuk <?php echo htmlspecialchars($jam, ENT_QUOTES, 'UTF-8'); ?></div>
+                                            <?php foreach (array_slice($daftar_pemenang, 0, 3) as $nomor => $pemenang): ?>
+                                                <div class="monthly-winner">
+                                                    <span class="arrival-rank"><?php echo $nomor + 1; ?></span>
+                                                    <div>
+                                                        <strong><?php echo htmlspecialchars($pemenang['nama'], ENT_QUOTES, 'UTF-8'); ?></strong>
+                                                        <small><?php echo htmlspecialchars($pemenang['perusahaan'], ENT_QUOTES, 'UTF-8'); ?></small>
+                                                    </div>
+                                                    <b><?php echo (int) $pemenang['tepat_waktu']; ?>x tepat waktu</b>
+                                                    <small><?php echo (int) $pemenang['terlambat']; ?>x terlambat</small>
+                                                </div>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php else: ?>
+                                <div class="empty-arrivals"><i class="fa fa-info-circle"></i> Belum ada rekap kedatangan bulan ini.</div>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -437,6 +531,8 @@ $awal_query = mysqli_query($kon, "
                     .stat-permission { background: #d97706; }
                     .stat-pending { background: #64748b; }
                     .stat-absent { background: #dc2626; }
+                    .stat-on-time { background: #0f766e; }
+                    .stat-late { background: #b45309; }
 
                     .early-arrivals {
                         margin-top: .75rem;
@@ -471,6 +567,95 @@ $awal_query = mysqli_query($kon, "
                         padding: 1rem 0 .25rem;
                         color: #64748b;
                     }
+
+                    .podium-groups,
+                    .monthly-podium-groups {
+                        display: grid;
+                        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+                        gap: 1rem;
+                        margin-top: 1rem;
+                    }
+
+                    .podium-group,
+                    .monthly-podium-group {
+                        padding: 1rem;
+                        border: 1px solid #e2e8f0;
+                        border-radius: 14px;
+                        background: #ffffff;
+                    }
+
+                    .podium-group-title {
+                        margin-bottom: .75rem;
+                        color: #334155;
+                        font-size: .85rem;
+                        font-weight: 700;
+                    }
+
+                    .podium-stage {
+                        display: flex;
+                        align-items: flex-end;
+                        justify-content: center;
+                        gap: .5rem;
+                        min-height: 210px;
+                    }
+
+                    .podium-place {
+                        display: flex;
+                        flex: 1 1 0;
+                        min-width: 0;
+                        flex-direction: column;
+                        align-items: center;
+                        text-align: center;
+                        color: #334155;
+                    }
+
+                    .podium-place strong,
+                    .podium-place small {
+                        width: 100%;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        white-space: nowrap;
+                    }
+
+                    .podium-place strong { font-size: .85rem; }
+                    .podium-place small { color: #64748b; font-size: .7rem; }
+                    .podium-medal { margin: .4rem 0; color: #f59e0b; }
+                    .podium-time { color: #0f766e; font-size: .75rem; font-weight: 700; }
+
+                    .podium-block {
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        width: 100%;
+                        margin-top: .4rem;
+                        color: #ffffff;
+                        background: #94a3b8;
+                    }
+
+                    .place-1 .podium-block { height: 86px; background: #d4a017; }
+                    .place-2 .podium-block { height: 62px; background: #94a3b8; }
+                    .place-3 .podium-block { height: 46px; background: #b7794b; }
+
+                    .monthly-arrivals {
+                        margin-top: 1.25rem;
+                        padding-top: 1rem;
+                        border-top: 1px solid #e2e8f0;
+                    }
+
+                    .monthly-winner {
+                        display: grid;
+                        grid-template-columns: 30px 1fr auto;
+                        align-items: center;
+                        gap: .65rem;
+                        padding: .65rem 0;
+                        border-bottom: 1px solid #f1f5f9;
+                    }
+
+                    .monthly-winner:last-child { border-bottom: 0; }
+                    .monthly-winner strong,
+                    .monthly-winner small { display: block; }
+                    .monthly-winner small { color: #64748b; font-size: .75rem; }
+                    .monthly-winner b { color: #0f766e; font-size: .78rem; white-space: nowrap; }
 
                     .me-2 {
                         margin-right: 0.5rem;

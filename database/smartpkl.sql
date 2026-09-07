@@ -75,6 +75,7 @@ CREATE TABLE `tbl_admin` (
   `nip` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `email` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  `jam_masuk` time DEFAULT '08:00:00',
 
 --
 -- Dumping data untuk tabel `tbl_admin`
@@ -183,6 +184,7 @@ CREATE TABLE `tbl_siswa` (
   `nis` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `mulai_pkl` date DEFAULT NULL,
   `akhir_pkl` date DEFAULT NULL,
+  `jam_masuk` time DEFAULT '08:00:00',
   `alamat` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `no_telp` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `foto` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL
@@ -192,8 +194,8 @@ CREATE TABLE `tbl_siswa` (
 -- Dumping data untuk tabel `tbl_siswa`
 --
 
-INSERT INTO `tbl_siswa` (`id_siswa`, `kode_siswa`, `nama`, `perusahaan`, `jurusan`, `nis`, `mulai_pkl`, `akhir_pkl`, `alamat`, `no_telp`, `foto`) VALUES
-(26, 'M075', 'Nur Yusuf Ferdiansyah', 'Bazma', 'SIJA', '2324019', '2026-07-20', '2026-07-21', 'CIrebon', '083833944848', 'Untitled design (10).png');
+INSERT INTO `tbl_siswa` (`id_siswa`, `kode_siswa`, `nama`, `perusahaan`, `jurusan`, `nis`, `mulai_pkl`, `akhir_pkl`, `jam_masuk`, `alamat`, `no_telp`, `foto`) VALUES
+(26, 'M075', 'Nur Yusuf Ferdiansyah', 'Bazma', 'SIJA', '2324019', '2026-07-20', '2026-07-21', '08:00:00', 'CIrebon', '083833944848', 'Untitled design (10).png');
 
 -- --------------------------------------------------------
 

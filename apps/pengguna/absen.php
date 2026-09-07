@@ -59,6 +59,8 @@ $akhir_absen = $setting['akhir_absen'];
                 if (isset($_GET['mulai'])) {
                     if ($_GET['mulai'] == 'berhasil') {
                         echo "<div class='alert alert-success'><strong>Berhasil!</strong> Absensi</div>";
+                    } else if ($_GET['mulai'] == 'terlambat') {
+                        echo "<div class='alert alert-danger'><strong>Absensi ditolak!</strong> Anda sudah melewati jam masuk yang ditetapkan.</div>";
                     } else if ($_GET['mulai'] == 'gagal') {
                         echo "<div class='alert alert-warning'><strong>Maaf!</strong> Rentang Waktu Absensi Anda Belum Atau Lewat</div>";
                     }
