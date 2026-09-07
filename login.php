@@ -1,6 +1,79 @@
 <?php
 session_start();
 
+require_once 'config/database.php';
+
+function setLoginSession($row, $is_siswa = false)
+{
+    $_SESSION["id_pengguna"] = $row["id_user"];
+    $_SESSION["kode_pengguna"] = $row["kode_pengguna"];
+    $_SESSION["username"] = $row["username"];
+    $_SESSION["level"] = $row["level"];
+
+    if ($is_siswa) {
+        $_SESSION["id_siswa"] = $row["id_siswa"];
+        $_SESSION["nama_siswa"] = $row["nama"];
+        $_SESSION["perusahaan"] = $row["perusahaan"];
+        $_SESSION["foto"] = $row["foto"];
+        $_SESSION["nis"] = $row["nis"];
+    } else {
+        $_SESSION["nama_admin"] = $row["nama"];
+        $_SESSION["nip"] = $row["nip"];
+    }
+}
+
+function rememberLogin($kon, $id_user)
+{
+    if (empty($_POST['ingat_saya'])) {
+        return;
+    }
+
+    $token = bin2hex(random_bytes(32));
+    $token_hash = hash('sha256', $token);
+    $stmt = $kon->prepare("UPDATE tbl_user SET remember_token_hash = ? WHERE id_user = ?");
+    $stmt->bind_param("si", $token_hash, $id_user);
+    $stmt->execute();
+    setcookie('remember_login', $token, [
+        'expires' => time() + (30 * 24 * 60 * 60),
+        'path' => '/',
+        'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+        'httponly' => true,
+        'samesite' => 'Lax'
+    ]);
+}
+
+// Pulihkan sesi dari cookie selama token masih valid.
+if (empty($_SESSION['kode_pengguna']) && !empty($_COOKIE['remember_login'])) {
+    $token_hash = hash('sha256', $_COOKIE['remember_login']);
+    $stmt = $kon->prepare("SELECT * FROM tbl_user WHERE remember_token_hash = ? LIMIT 1");
+    $stmt->bind_param("s", $token_hash);
+    $stmt->execute();
+    $token_result = $stmt->get_result();
+    $token_user = $token_result->fetch_assoc();
+
+    if ($token_user) {
+        if (strtolower($token_user['level']) === 'siswa') {
+            $stmt = $kon->prepare("SELECT p.*, m.id_siswa, m.nama, m.perusahaan, m.foto, m.nis FROM tbl_user p INNER JOIN tbl_siswa m ON m.kode_siswa = p.kode_pengguna WHERE p.id_user = ? LIMIT 1");
+            $stmt->bind_param("i", $token_user['id_user']);
+            $stmt->execute();
+            $token_user = $stmt->get_result()->fetch_assoc();
+        } else {
+            $stmt = $kon->prepare("SELECT p.*, k.nama, k.nip FROM tbl_user p INNER JOIN tbl_admin k ON k.kode_admin = p.kode_pengguna WHERE p.id_user = ? LIMIT 1");
+            $stmt->bind_param("i", $token_user['id_user']);
+            $stmt->execute();
+            $token_user = $stmt->get_result()->fetch_assoc();
+        }
+
+        if ($token_user) {
+            setLoginSession($token_user, strtolower($token_user['level']) === 'siswa');
+            header('Location:index.php?page=beranda');
+            exit;
+        }
+    }
+
+    setcookie('remember_login', '', time() - 3600, '/');
+}
+
 // Reset session jika sebelumnya sudah ada login
 if (isset($_SESSION["id_pengguna"])) {
     session_unset();
@@ -17,8 +90,6 @@ function input($data)
 
 // Jika form disubmit
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    include "config/database.php";
-
     $username = input($_POST["username"]);
     $password = md5(input($_POST["password"])); // langsung di-md5 tanpa input() dua kali
 
@@ -43,26 +114,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // ==================== Login Berhasil ====================
     if ($result_admin->num_rows > 0) {
         $row = $result_admin->fetch_assoc();
-        $_SESSION["id_pengguna"]  = $row["id_user"];
-        $_SESSION["kode_pengguna"] = $row["kode_pengguna"];
-        $_SESSION["nama_admin"]   = $row["nama"];
-        $_SESSION["username"]     = $row["username"];
-        $_SESSION["level"]        = $row["level"];
-        $_SESSION["nip"]          = $row["nip"];
+        setLoginSession($row);
+        rememberLogin($kon, $row['id_user']);
 
         header("Location:index.php?page=beranda");
         exit;
     } elseif ($result_siswa->num_rows > 0) {
         $row = $result_siswa->fetch_assoc();
-        $_SESSION["id_pengguna"]  = $row["id_user"];
-        $_SESSION["kode_pengguna"] = $row["kode_pengguna"];
-        $_SESSION["id_siswa"]     = $row["id_siswa"];
-        $_SESSION["nama_siswa"]   = $row["nama"];
-        $_SESSION["username"]     = $row["username"];
-        $_SESSION["perusahaan"]   = $row["perusahaan"];
-        $_SESSION["level"]        = $row["level"];
-        $_SESSION["foto"]         = $row["foto"];
-        $_SESSION["nis"]          = $row["nis"];
+        setLoginSession($row, true);
+        rememberLogin($kon, $row['id_user']);
 
         header("Location:index.php?page=verify_lokasi");
         exit;
@@ -210,6 +270,10 @@ $logo          = $row['logo'] ?? 'logo.png';
         <h2 class="subtitle">Sistem Manajemen Report Tugas PKL</h2>
 
         <form action="" method="post" autocomplete="off" novalidate style="width:100%;">
+            <div class="form-group form-check">
+                <input type="checkbox" name="ingat_saya" id="ingat_saya" class="form-check-input" value="1" checked />
+                <label for="ingat_saya" class="form-check-label">Ingat saya selama 30 hari</label>
+            </div>
             <div class="form-group">
                 <label for="username">Username</label>
                 <input autofocus required type="text" name="username" id="username" class="form-control" placeholder="Masukkan username" />

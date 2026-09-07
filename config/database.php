@@ -12,6 +12,7 @@ if (!$kon) {
 
 // Menjaga database lama tetap kompatibel saat kolom jam masuk belum tersedia.
 mysqli_query($kon, "ALTER TABLE tbl_siswa ADD COLUMN IF NOT EXISTS jam_masuk TIME DEFAULT '08:00:00' AFTER akhir_pkl");
+mysqli_query($kon, "ALTER TABLE tbl_user ADD COLUMN IF NOT EXISTS remember_token_hash CHAR(64) DEFAULT NULL AFTER password");
 
 mysqli_query($kon, "
     CREATE TABLE IF NOT EXISTS tbl_pengunjung (

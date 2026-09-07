@@ -248,6 +248,7 @@ CREATE TABLE `tbl_user` (
   `kode_pengguna` varchar(4) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `username` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `password` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `remember_token_hash` char(64) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `level` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -365,7 +366,8 @@ ALTER TABLE `tbl_siswa`
 --
 ALTER TABLE `tbl_user`
   ADD PRIMARY KEY (`id_user`),
-  ADD UNIQUE KEY `kode_pengguna` (`kode_pengguna`);
+  ADD UNIQUE KEY `kode_pengguna` (`kode_pengguna`),
+  ADD UNIQUE KEY `idx_user_remember_token` (`remember_token_hash`);
 
 --
 -- AUTO_INCREMENT untuk tabel yang dibuang
