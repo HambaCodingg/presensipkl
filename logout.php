@@ -9,14 +9,14 @@ $presence_stmt->bind_param("s", $presence_session_id);
 $presence_stmt->execute();
 
 if (!empty($_SESSION['id_pengguna'])) {
+	$id_pengguna = (int) $_SESSION['id_pengguna'];
 	$remember_stmt = $kon->prepare("UPDATE tbl_user SET remember_token_hash = NULL WHERE id_user = ?");
-	$remember_stmt->bind_param("i", $_SESSION['id_pengguna']);
+	$remember_stmt->bind_param("i", $id_pengguna);
 	$remember_stmt->execute();
 }
 setcookie('remember_login', '', time() - 3600, '/');
 
 //Set session
-$id_pengguna = $_SESSION['id_pengguna'];
 $_SESSION['id_pengguna'] = '';
 $_SESSION['kode_pengguna'] = '';
 $_SESSION['nama_pengguna'] = '';
