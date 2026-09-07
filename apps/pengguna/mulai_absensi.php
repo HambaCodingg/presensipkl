@@ -162,6 +162,28 @@ $query  = "SELECT COUNT(*) as jml FROM tbl_absensi WHERE tanggal = '$tanggal_sek
 $result = mysqli_query($kon, $query);
 $data   = mysqli_fetch_assoc($result);
 $absensi_sudah = ($data['jml'] > 0) ? "disabled" : "";
+
+// Cek keterlambatan saat tombol Absensi hijau membuka modal, sebelum kamera ditampilkan.
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['submit'])) {
+    date_default_timezone_set('Asia/Jakarta');
+    $siswa_query = mysqli_query($kon, "
+        SELECT COALESCE(jam_masuk, '08:00:00') AS jam_masuk
+        FROM tbl_siswa
+        WHERE id_siswa = '$id_siswa'
+        LIMIT 1
+    ");
+    $siswa = mysqli_fetch_assoc($siswa_query);
+    $jam_masuk_siswa = $siswa['jam_masuk'] ?? '08:00:00';
+    $jam_sekarang = date('H:i:s');
+
+    if ($jam_sekarang > $jam_masuk_siswa) {
+        echo "<script>
+            alert('Maaf, Anda telat. Tolong hubungi pihak terkait.');
+            $('#modal').modal('hide');
+        </script>";
+        exit;
+    }
+}
 ?>
 
 <style>
