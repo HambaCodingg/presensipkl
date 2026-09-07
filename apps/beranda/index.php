@@ -53,7 +53,6 @@ $tepat_hari_ini_query = mysqli_query($kon, "
     WHERE a.tanggal = CURDATE()
         AND a.status = 1
         AND a.waktu IS NOT NULL
-        AND TIME(a.waktu) <= COALESCE(s.jam_masuk, '08:00:00')
         AND s.mulai_pkl <= CURDATE()
         AND s.akhir_pkl >= CURDATE()
     ORDER BY s.jam_masuk ASC, a.waktu ASC, s.nama ASC
@@ -65,12 +64,10 @@ if ($tepat_hari_ini_query) {
     }
 }
 
-$podium_bulanan = [];
 $rekap_bulanan_query = mysqli_query($kon, "
     SELECT a.id_siswa, s.nama, s.perusahaan,
         COALESCE(s.jam_masuk, '08:00:00') AS jam_masuk,
-        SUM(CASE WHEN TIME(a.waktu) <= COALESCE(s.jam_masuk, '08:00:00') THEN 1 ELSE 0 END) AS tepat_waktu,
-        SUM(CASE WHEN TIME(a.waktu) > COALESCE(s.jam_masuk, '08:00:00') THEN 1 ELSE 0 END) AS terlambat
+        a.tanggal, a.waktu
     FROM tbl_absensi a
     INNER JOIN tbl_siswa s ON s.id_siswa = a.id_siswa
     WHERE a.tanggal >= DATE_FORMAT(CURDATE(), '%Y-%m-01')
@@ -79,19 +76,53 @@ $rekap_bulanan_query = mysqli_query($kon, "
         AND a.waktu IS NOT NULL
         AND s.mulai_pkl <= a.tanggal
         AND s.akhir_pkl >= a.tanggal
-    GROUP BY a.id_siswa, s.nama, s.perusahaan, s.jam_masuk
-    ORDER BY tepat_waktu DESC, terlambat ASC, s.nama ASC
+    ORDER BY a.tanggal ASC, s.jam_masuk ASC, a.waktu ASC, s.nama ASC
 ");
+
+$pemenang_harian_bulanan = [];
 if ($rekap_bulanan_query) {
     while ($rekap = mysqli_fetch_assoc($rekap_bulanan_query)) {
         $jam_target = substr($rekap['jam_masuk'], 0, 5);
-        $podium_bulanan[$jam_target][] = $rekap;
+        $kunci_harian = $rekap['tanggal'] . '|' . $jam_target;
+
+        if (!isset($pemenang_harian_bulanan[$kunci_harian])) {
+            $pemenang_harian_bulanan[$kunci_harian] = [
+                'waktu' => $rekap['waktu'],
+                'siswa' => []
+            ];
+        }
+
+        if ($rekap['waktu'] < $pemenang_harian_bulanan[$kunci_harian]['waktu']) {
+            $pemenang_harian_bulanan[$kunci_harian]['waktu'] = $rekap['waktu'];
+            $pemenang_harian_bulanan[$kunci_harian]['siswa'] = [];
+        }
+
+        if ($rekap['waktu'] === $pemenang_harian_bulanan[$kunci_harian]['waktu']) {
+            $pemenang_harian_bulanan[$kunci_harian]['siswa'][$rekap['id_siswa']] = $rekap;
+        }
+    }
+}
+
+$podium_bulanan = [];
+foreach ($pemenang_harian_bulanan as $kunci_harian => $pemenang_harian) {
+    $jam_target = substr($kunci_harian, 11, 5);
+    foreach ($pemenang_harian['siswa'] as $pemenang) {
+        $id_siswa = $pemenang['id_siswa'];
+        if (!isset($podium_bulanan[$jam_target][$id_siswa])) {
+            $podium_bulanan[$jam_target][$id_siswa] = [
+                'nama' => $pemenang['nama'],
+                'perusahaan' => $pemenang['perusahaan'],
+                'jam_masuk' => $pemenang['jam_masuk'],
+                'jumlah' => 0
+            ];
+        }
+        $podium_bulanan[$jam_target][$id_siswa]['jumlah']++;
     }
 }
 foreach ($podium_bulanan as &$daftar_pemenang) {
+    $daftar_pemenang = array_values($daftar_pemenang);
     usort($daftar_pemenang, function ($a, $b) {
-        return (int) $b['tepat_waktu'] <=> (int) $a['tepat_waktu']
-            ?: (int) $a['terlambat'] <=> (int) $b['terlambat']
+        return (int) $b['jumlah'] <=> (int) $a['jumlah']
             ?: strcasecmp($a['nama'], $b['nama']);
     });
 }
@@ -203,8 +234,8 @@ unset($daftar_pemenang);
                         <div class="early-arrivals">
                             <div class="early-arrivals-heading">
                                 <div>
-                                    <h5><i class="fa fa-trophy"></i> Podium Tepat Waktu Hari Ini</h5>
-                                    <small>Dipisahkan berdasarkan target jam masuk siswa</small>
+                                    <h5><i class="fa fa-trophy"></i> Podium Hadir Paling Awal Hari Ini</h5>
+                                    <small>Waktu aktual dibandingkan di dalam kelompok target masuk yang sama</small>
                                 </div>
                                 <span><?php echo (int) $statistik['hadir']; ?> siswa hadir</span>
                             </div>
@@ -242,8 +273,8 @@ unset($daftar_pemenang);
                         <div class="monthly-arrivals">
                             <div class="early-arrivals-heading">
                                 <div>
-                                    <h5><i class="fa fa-calendar"></i> Podium Ketepatan Waktu Bulan Ini</h5>
-                                    <small>Peringkat berdasarkan jumlah hari tepat waktu</small>
+                                    <h5><i class="fa fa-calendar"></i> Podium Hadir Paling Awal Bulan Ini</h5>
+                                    <small>Peringkat berdasarkan jumlah kemenangan waktu paling awal per hari</small>
                                 </div>
                                 <span><?php echo date('F Y'); ?></span>
                             </div>
@@ -260,8 +291,7 @@ unset($daftar_pemenang);
                                                         <strong><?php echo htmlspecialchars($pemenang['nama'], ENT_QUOTES, 'UTF-8'); ?></strong>
                                                         <small><?php echo htmlspecialchars($pemenang['perusahaan'], ENT_QUOTES, 'UTF-8'); ?></small>
                                                     </div>
-                                                    <b><?php echo (int) $pemenang['tepat_waktu']; ?>x tepat waktu</b>
-                                                    <small><?php echo (int) $pemenang['terlambat']; ?>x terlambat</small>
+                                                    <b><?php echo (int) $pemenang['jumlah']; ?>x paling awal</b>
                                                 </div>
                                             <?php endforeach; ?>
                                         </div>
