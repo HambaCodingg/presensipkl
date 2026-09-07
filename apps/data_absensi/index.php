@@ -77,8 +77,98 @@ if ($_SESSION["level"] != 'Admin' and $_SESSION["level"] != 'admin') {
                 <div class="form-group">
                     <button type="button" class="btn btn-success" id="tambah_absensi"><i class="tambah_absensi fa fa-plus"></i> Absensi</button>
                 </div>
+                <?php
+                $is_filtered = !empty($_GET['nama']) || !empty($_GET['tanggal_awal']) || !empty($_GET['tanggal_akhir']);
+                $matrix_dates = [];
+                $matrix_rows = [];
+                if ($is_filtered) {
+                    $matrix_start = $_GET['tanggal_awal'] ?? $_GET['tanggal_akhir'] ?? date('Y-m-d');
+                    $matrix_end = $_GET['tanggal_akhir'] ?? $_GET['tanggal_awal'] ?? $matrix_start;
+                    if ($matrix_start > $matrix_end) {
+                        [$matrix_start, $matrix_end] = [$matrix_end, $matrix_start];
+                    }
+
+                    $period = new DatePeriod(
+                        new DateTime($matrix_start),
+                        new DateInterval('P1D'),
+                        (new DateTime($matrix_end))->modify('+1 day')
+                    );
+                    foreach ($period as $matrix_date) {
+                        if ((int) $matrix_date->format('N') <= 5) {
+                            $matrix_dates[] = $matrix_date->format('Y-m-d');
+                        }
+                    }
+
+                    $matrix_name = mysqli_real_escape_string($kon, trim($_GET['nama'] ?? ''));
+                    $matrix_name_filter = $matrix_name !== '' ? "AND s.nama LIKE '%$matrix_name%'" : '';
+                    $matrix_query = mysqli_query($kon, "
+                        SELECT s.id_siswa, s.nama, a.tanggal, a.status AS status_code,
+                            a.foto, a.waktu
+                        FROM tbl_siswa s
+                        LEFT JOIN tbl_absensi a
+                            ON a.id_siswa = s.id_siswa
+                            AND a.tanggal BETWEEN '" . mysqli_real_escape_string($kon, $matrix_start) . "'
+                                AND '" . mysqli_real_escape_string($kon, $matrix_end) . "'
+                        WHERE s.mulai_pkl <= '" . mysqli_real_escape_string($kon, $matrix_end) . "'
+                            AND s.akhir_pkl >= '" . mysqli_real_escape_string($kon, $matrix_start) . "'
+                            $matrix_name_filter
+                        ORDER BY s.nama ASC, a.tanggal ASC
+                    ");
+                    while ($matrix_query && $matrix_data = mysqli_fetch_assoc($matrix_query)) {
+                        $id_matrix = $matrix_data['id_siswa'];
+                        if (!isset($matrix_rows[$id_matrix])) {
+                            $matrix_rows[$id_matrix] = [
+                                'nama' => $matrix_data['nama'],
+                                'absensi' => []
+                            ];
+                        }
+                        if (!empty($matrix_data['tanggal'])) {
+                            $matrix_rows[$id_matrix]['absensi'][$matrix_data['tanggal']] = $matrix_data;
+                        }
+                    }
+                }
+                ?>
                 <div class="table-responsive">
                     <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                        <?php if ($is_filtered): ?>
+                            <thead class="attendance-matrix-head">
+                                <tr>
+                                    <th>No</th>
+                                    <th>Nama</th>
+                                    <?php foreach ($matrix_dates as $matrix_date): ?>
+                                        <th><?php echo (int) date('j', strtotime($matrix_date)); ?></th>
+                                    <?php endforeach; ?>
+                                </tr>
+                            </thead>
+                            <tbody class="attendance-matrix-body">
+                                <?php $matrix_no = 0; ?>
+                                <?php foreach ($matrix_rows as $matrix_row): ?>
+                                    <?php $matrix_no++; ?>
+                                    <tr>
+                                        <td><?php echo $matrix_no; ?></td>
+                                        <td class="matrix-student-name"><?php echo htmlspecialchars($matrix_row['nama'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                        <?php foreach ($matrix_dates as $matrix_date): ?>
+                                            <?php
+                                            $cell = $matrix_row['absensi'][$matrix_date] ?? null;
+                                            $status_code = (int) ($cell['status_code'] ?? 0);
+                                            $status_label = $status_code === 1 ? 'Hadir' : ($status_code === 2 ? 'Izin' : 'Alfa');
+                                            $status_class = $status_code === 1 ? 'matrix-hadir' : ($status_code === 2 ? 'matrix-izin' : 'matrix-alfa');
+                                            ?>
+                                            <td>
+                                                <button type="button" class="matrix-status <?php echo $status_class; ?> <?php echo !empty($cell['foto']) ? 'view-attendance-photo' : ''; ?>"
+                                                    <?php if (!empty($cell['foto'])): ?>
+                                                        data-photo="<?php echo htmlspecialchars('uploads/absensi/' . $cell['foto'], ENT_QUOTES, 'UTF-8'); ?>"
+                                                        data-name="<?php echo htmlspecialchars($matrix_row['nama'] . ' - ' . $status_label, ENT_QUOTES, 'UTF-8'); ?>"
+                                                    <?php endif; ?>
+                                                    title="<?php echo !empty($cell['foto']) ? 'Klik untuk melihat foto' : $status_label; ?>">
+                                                    <?php echo $status_label; ?>
+                                                </button>
+                                            </td>
+                                        <?php endforeach; ?>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        <?php else: ?>
                         <thead>
                             <tr>
                                 <th>No</th>
@@ -157,6 +247,7 @@ if ($_SESSION["level"] != 'Admin' and $_SESSION["level"] != 'admin') {
                                 <!-- bagian akhir (penutup) while -->
                             <?php endwhile; ?>
                         </tbody>
+                        <?php endif; ?>
                     </table>
                 </div>
             </div>
@@ -177,6 +268,73 @@ if ($_SESSION["level"] != 'Admin' and $_SESSION["level"] != 'admin') {
     .attendance-photo-thumb:hover {
         transform: scale(1.04);
         box-shadow: 0 4px 12px rgba(15, 23, 42, .2);
+    }
+
+    .attendance-matrix-head th {
+        min-width: 72px;
+        padding: 8px 6px !important;
+        color: #111827;
+        background: #fff900;
+        text-align: center;
+    }
+
+    .attendance-matrix-head th:nth-child(2) {
+        min-width: 250px;
+        text-align: left;
+    }
+
+    .attendance-matrix-body td {
+        padding: 4px !important;
+        vertical-align: middle;
+        text-align: center;
+    }
+
+    .attendance-matrix-body td:first-child,
+    .attendance-matrix-body .matrix-student-name {
+        text-align: left;
+    }
+
+    .attendance-matrix-body td:first-child {
+        width: 42px;
+        text-align: center;
+    }
+
+    .matrix-student-name {
+        min-width: 250px;
+        padding-left: 8px !important;
+        color: #111827;
+        font-weight: 500;
+    }
+
+    .matrix-status {
+        display: block;
+        width: 100%;
+        min-width: 64px;
+        padding: 5px 4px;
+        border: 0;
+        border-radius: 3px;
+        font-size: .8rem;
+        font-weight: 600;
+        cursor: default;
+    }
+
+    .matrix-status.view-attendance-photo {
+        cursor: pointer;
+    }
+
+    .matrix-hadir {
+        color: #166534;
+        background: #d9f3c5;
+    }
+
+    .matrix-izin {
+        color: #075985;
+        background: #b9ddf6;
+    }
+
+    .matrix-alfa {
+        color: #991b1b;
+        background: #fee2e2;
     }
 </style>
 
