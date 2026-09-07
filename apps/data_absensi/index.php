@@ -28,19 +28,19 @@ if ($_SESSION["level"] != 'Admin' and $_SESSION["level"] != 'admin') {
                         <div class="col-sm-3">
                             <div class="form-group">
                                 <label>Nama Siswa :</label>
-                                <input type="text" name="nama" id="nama" class="form-control" value="" placeholder="Cari siswa" required>
+                                <input type="text" name="nama" id="nama" class="form-control" value="<?php echo htmlspecialchars($_GET['nama'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" placeholder="Opsional - cari siswa">
                             </div>
                         </div>
                         <div class="col-sm-3">
                             <div class="form-group">
                                 <label>Tanggal Awal :</label>
-                                <input type="date" name="tanggal_awal" id="tanggal_awal" class="form-control" required>
+                                <input type="date" name="tanggal_awal" id="tanggal_awal" class="form-control" value="<?php echo htmlspecialchars($_GET['tanggal_awal'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
                             </div>
                         </div>
                         <div class="col-sm-3">
                             <div class="form-group">
                                 <label>Tanggal Akhir :</label>
-                                <input type="date" name="tanggal_akhir" id="tanggal_akhir" class="form-control" required>
+                                <input type="date" name="tanggal_akhir" id="tanggal_akhir" class="form-control" value="<?php echo htmlspecialchars($_GET['tanggal_akhir'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
                             </div>
                         </div>
                         <div class="col-sm-3">
@@ -84,7 +84,6 @@ if ($_SESSION["level"] != 'Admin' and $_SESSION["level"] != 'admin') {
                                 <th>No</th>
                                 <th>Nama</th>
                                 <th>Perusahaan</th>
-                                <th>Foto</th>
                                 <th>Status</th>
                                 <th>Waktu</th>
                                 <th>Hari</th>
@@ -97,10 +96,10 @@ if ($_SESSION["level"] != 'Admin' and $_SESSION["level"] != 'admin') {
                             <?php
                             include 'config/database.php';
                             include 'config/function.php';
-                            if (isset($_GET['nama']) and $_GET['nama'] != "") {
-                                $nama = trim($_GET["nama"]);
-                                $tanggal_awal = $_GET["tanggal_awal"];
-                                $tanggal_akhir = $_GET["tanggal_akhir"];
+                            if (!empty($_GET['nama']) || !empty($_GET['tanggal_awal']) || !empty($_GET['tanggal_akhir'])) {
+                                $nama = trim($_GET['nama'] ?? '');
+                                $tanggal_awal = !empty($_GET['tanggal_awal']) ? $_GET['tanggal_awal'] : ($_GET['tanggal_akhir'] ?? '');
+                                $tanggal_akhir = !empty($_GET['tanggal_akhir']) ? $_GET['tanggal_akhir'] : ($_GET['tanggal_awal'] ?? '');
                                 $sql = PencarianAbsensi($nama, $tanggal_awal, $tanggal_akhir);
                             } else {
                                 $sql = AbsensiOtomatis('');
@@ -116,13 +115,19 @@ if ($_SESSION["level"] != 'Admin' and $_SESSION["level"] != 'admin') {
                                     <td><?php echo $data['nama']; ?></td>
                                     <td><?php echo $data['perusahaan']; ?></td>
                                     <td>
-                                        <?php
-                                        $foto = isset($data['foto']) && $data['foto'] != '' ? $data['foto'] : 'default.png';
-                                        $fotoPath = 'uploads/absensi/' . $foto;
-                                        ?>
-                                        <img src="<?php echo $fotoPath; ?>" alt="Foto Absensi" width="80" style="border-radius:6px; object-fit:cover; max-height:80px;">
+                                        <?php if ((int) ($data['status_code'] ?? 0) === 1 && !empty($data['foto'])): ?>
+                                            <button type="button" class="view-attendance-photo btn btn-success btn-circle"
+                                                data-photo="<?php echo htmlspecialchars('uploads/absensi/' . $data['foto'], ENT_QUOTES, 'UTF-8'); ?>"
+                                                data-name="<?php echo htmlspecialchars($data['nama'], ENT_QUOTES, 'UTF-8'); ?>"
+                                                title="Lihat foto absensi">
+                                                <i class="fa fa-check"></i>
+                                            </button>
+                                        <?php elseif ((int) ($data['status_code'] ?? 0) === 1): ?>
+                                            <span class="label label-success"><i class="fa fa-check"></i> Hadir</span>
+                                        <?php else: ?>
+                                            <span><?php echo htmlspecialchars($data['status'], ENT_QUOTES, 'UTF-8'); ?></span>
+                                        <?php endif; ?>
                                     </td>
-                                    <td><?php echo $data['status']; ?></td>
                                     <td><?php echo $data['waktu']; ?></td>
                                     <td>
                                         <?php
@@ -178,6 +183,31 @@ if ($_SESSION["level"] != 'Admin' and $_SESSION["level"] != 'admin') {
 </div>
 
 <script>
+    // Satu tanggal boleh dipakai sebagai filter tanggal tunggal.
+    $('form[action="#"]').on('submit', function(e) {
+        var tanggalAwal = $('#tanggal_awal').val();
+        var tanggalAkhir = $('#tanggal_akhir').val();
+        if (!tanggalAwal && !tanggalAkhir) {
+            e.preventDefault();
+            alert('Isi minimal satu tanggal untuk melakukan pencarian.');
+            return false;
+        }
+        if (!tanggalAwal) {
+            $('#tanggal_awal').val(tanggalAkhir);
+        }
+        if (!tanggalAkhir) {
+            $('#tanggal_akhir').val(tanggalAwal);
+        }
+    });
+
+    $(document).on('click', '.view-attendance-photo', function() {
+        var photo = $(this).data('photo');
+        var name = $(this).data('name');
+        $('#judul').text('Foto Absensi - ' + name);
+        $('#tampil_data').html('<div class="text-center"><img src="' + photo + '" alt="Foto absensi ' + name + '" style="max-width:100%;max-height:65vh;border-radius:8px;object-fit:contain;"></div>');
+        $('#modal').modal('show');
+    });
+
     //Menambahkan absensi oleh admin
     $('#tambah_absensi').on('click', function() {
         $.ajax({

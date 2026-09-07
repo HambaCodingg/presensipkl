@@ -80,6 +80,7 @@ function AbsensiOtomatis($sql)
     include 'database.php';
     $sql = "SELECT tbl_siswa.id_siswa, tbl_siswa.nama, tbl_siswa.perusahaan, 
         tbl_siswa.mulai_pkl, tbl_siswa.akhir_pkl, tbl_absensi.id_absensi, tbl_absensi.foto,
+        tbl_absensi.status AS status_code,
         (CASE
             WHEN tbl_absensi.status IS NULL THEN 'Belum Absensi'
             WHEN tbl_absensi.status = 1 THEN 'Hadir'
@@ -105,25 +106,30 @@ function AbsensiOtomatis($sql)
 function PencarianAbsensi($nama, $tanggal_awal, $tanggal_akhir)
 {
     include 'database.php';
-    $sql = "SELECT tbl_absensi.id_absensi, tbl_absensi.id_siswa, tbl_absensi.foto,
-    COALESCE(CASE tbl_absensi.status 
-        WHEN 1 THEN 'Hadir' 
-        WHEN 2 THEN 'Izin' 
-    ELSE 'Tidak Hadir' END) as status,
-    DATE_FORMAT(tbl_absensi.tanggal, '%W') AS hari, 
-        tbl_absensi.tanggal, 
-        tbl_absensi.waktu, tbl_siswa.nama, tbl_siswa.perusahaan, 
-        tbl_siswa.mulai_pkl, tbl_siswa.akhir_pkl 
-    FROM tbl_siswa LEFT JOIN tbl_absensi 
-        ON tbl_absensi.id_siswa = tbl_siswa.id_siswa 
-    WHERE tbl_siswa.mulai_pkl <= CURDATE() AND 
-        tbl_siswa.akhir_pkl >= CURDATE() AND 
-    DAYNAME(tbl_absensi.tanggal) NOT IN ('Saturday', 'Sunday') AND 
-        tbl_siswa.nama LIKE '%$nama%' AND
-        tbl_absensi.tanggal >= '$tanggal_awal' AND
-        tbl_absensi.tanggal <= '$tanggal_akhir'
-    ORDER BY tbl_absensi.tanggal DESC;";
-    return $sql;
+    $nama = mysqli_real_escape_string($kon, trim($nama));
+    $tanggal_awal = mysqli_real_escape_string($kon, $tanggal_awal);
+    $tanggal_akhir = mysqli_real_escape_string($kon, $tanggal_akhir);
+    $filter_nama = $nama !== '' ? "AND s.nama LIKE '%$nama%'" : '';
+
+    return "SELECT a.id_absensi, a.id_siswa, a.foto,
+        a.status AS status_code,
+        CASE a.status
+            WHEN 1 THEN 'Hadir'
+            WHEN 2 THEN 'Izin'
+            WHEN 3 THEN 'Tidak Hadir'
+            ELSE 'Belum Absensi'
+        END AS status,
+        DATE_FORMAT(a.tanggal, '%W') AS hari,
+        a.tanggal, a.waktu, s.nama, s.perusahaan,
+        s.mulai_pkl, s.akhir_pkl
+    FROM tbl_siswa s
+    LEFT JOIN tbl_absensi a
+        ON a.id_siswa = s.id_siswa
+        AND a.tanggal BETWEEN '$tanggal_awal' AND '$tanggal_akhir'
+    WHERE s.mulai_pkl <= '$tanggal_akhir'
+        AND s.akhir_pkl >= '$tanggal_awal'
+        $filter_nama
+    ORDER BY a.tanggal DESC, s.nama ASC;";
 }
 ?>
 
@@ -153,24 +159,40 @@ function EditAbsensi($id_absensi)
 
 function AbsensiAsramaOtomatis($sql)
 {
-    include 'database.php';
-    $sql = "SELECT tbl_siswa.id_siswa, tbl_siswa.nama, tbl_siswa.perusahaan,
-        tbl_absen_asrama.id_absen_asrama,
-        (CASE
-            WHEN tbl_absen_asrama.status IS NULL THEN 'Belum Absensi'
-            WHEN tbl_absen_asrama.status = 1 THEN 'Hadir'
-            WHEN tbl_absen_asrama.status = 2 THEN 'Izin'
-        ELSE 'Tidak Hadir' END) AS status,
-        (CASE
-            WHEN tbl_absen_asrama.waktu IS NULL THEN 'Belum'
-            ELSE tbl_absen_asrama.waktu END) AS waktu,
-        DATE_FORMAT(CURDATE(), '%W') AS hari,
-        DATE_FORMAT(CURDATE(), '%Y-%m-%d') AS tanggal
-        FROM tbl_siswa LEFT JOIN tbl_absen_asrama ON 
-            tbl_absen_asrama.id_siswa = tbl_siswa.id_siswa 
-        AND tbl_absen_asrama.tanggal = CURDATE()
-        ORDER BY tbl_siswa.nama ASC;";
-    return $sql;
+                $nama = mysqli_real_escape_string($kon, trim($nama));
+                $tanggal_awal = mysqli_real_escape_string($kon, $tanggal_awal);
+                $tanggal_akhir = mysqli_real_escape_string($kon, $tanggal_akhir);
+                $filter_nama = $nama !== '' ? "AND tbl_siswa.nama LIKE '%$nama%'" : '';
+
+                $sql = "SELECT tbl_absensi.id_absensi, tbl_absensi.id_siswa, tbl_absensi.foto,
+                    tbl_absensi.status AS status_code,
+                    CASE tbl_absensi.status
+                        WHEN 1 THEN 'Hadir'
+                        WHEN 2 THEN 'Izin'
+                        WHEN 3 THEN 'Tidak Hadir'
+                        ELSE 'Belum Absensi'
+                    END AS status,
+                    DATE_FORMAT(COALESCE(tbl_absensi.tanggal, dates.tanggal), '%W') AS hari,
+                    COALESCE(tbl_absensi.tanggal, dates.tanggal) AS tanggal,
+                    tbl_absensi.waktu, tbl_siswa.nama, tbl_siswa.perusahaan,
+                    tbl_siswa.mulai_pkl, tbl_siswa.akhir_pkl
+                FROM tbl_siswa
+                CROSS JOIN (
+                    SELECT tanggal
+                    FROM (
+                        SELECT '$tanggal_awal' AS tanggal
+                        UNION
+                        SELECT '$tanggal_akhir' AS tanggal
+                    ) AS selected_dates
+                    WHERE tanggal IS NOT NULL AND tanggal <> ''
+                ) AS dates
+                LEFT JOIN tbl_absensi
+                    ON tbl_absensi.id_siswa = tbl_siswa.id_siswa
+                    AND tbl_absensi.tanggal = dates.tanggal
+                WHERE dates.tanggal BETWEEN tbl_siswa.mulai_pkl AND tbl_siswa.akhir_pkl
+                    $filter_nama
+                    AND DAYNAME(dates.tanggal) NOT IN ('Saturday', 'Sunday')
+                ORDER BY dates.tanggal DESC, tbl_siswa.nama ASC;";
 }
 
 function PencarianAbsensiAsrama($nama, $tanggal_awal, $tanggal_akhir)
