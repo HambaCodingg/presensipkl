@@ -80,6 +80,14 @@ if ($action === 'screen_release') {
     exit;
 }
 
+if ($action === 'cursor') {
+    $stmt = $kon->prepare('SELECT COALESCE(MAX(id_signal), 0) AS last_id FROM tbl_meeting_signals WHERE room_id = ?');
+    $stmt->bind_param('i', $room_id);
+    $stmt->execute();
+    echo json_encode(['last_id' => (int) $stmt->get_result()->fetch_assoc()['last_id']]);
+    exit;
+}
+
 if ($action === 'send') {
     $recipient_id = $_POST['recipient_id'] ?? null;
     $signal_type = $_POST['signal_type'] ?? '';

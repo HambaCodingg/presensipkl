@@ -260,6 +260,12 @@ $meeting_title = $meeting['judul'];
         var payload = JSON.parse(signal.payload);
         var pc;
         if (signal.signal_type === 'join') {
+            if (peers[signal.sender_id]) {
+                peers[signal.sender_id].close();
+                delete peers[signal.sender_id];
+                removePeerTile(signal.sender_id);
+                pendingCandidates[signal.sender_id] = [];
+            }
             if (myId < signal.sender_id) createPeer(signal.sender_id, true);
             return;
         }
@@ -315,9 +321,14 @@ $meeting_title = $meeting['judul'];
         addTile('local', stream, displayName + ' (Anda)');
         document.getElementById('meetingNote').textContent = 'Meeting aktif. Bagikan halaman ini kepada peserta yang dijadwalkan.';
         attendanceRequest('checkin');
-        send('join', {name:displayName});
-        poll();
-    }).catch(function () { document.getElementById('meetingNote').textContent = 'Kamera atau mikrofon tidak dapat diakses. Izinkan akses perangkat lalu muat ulang.'; });
+        fetch(signalUrl + '?action=cursor&room_id=' + roomId, {credentials:'same-origin'})
+            .then(function (response) { return response.json(); })
+            .then(function (cursor) {
+                lastSignalId = Number(cursor.last_id || 0);
+                return send('join', {name:displayName, refreshed:true});
+            })
+            .then(function () { poll(); });
+    }).catch(function () { document.getElementById('meetingNote').textContent = 'Kamera atau mikrofon tidak dapat diakses. Pastikan HTTPS aktif, izin kamera diberikan, lalu muat ulang.'; });
 
     document.getElementById('toggleMic').onclick = function () { micEnabled = !micEnabled; localStream.getAudioTracks().forEach(function (track) { track.enabled = micEnabled; }); this.classList.toggle('active', micEnabled); };
     document.getElementById('toggleCamera').onclick = function () { cameraEnabled = !cameraEnabled; localStream.getVideoTracks().forEach(function (track) { track.enabled = cameraEnabled; }); this.classList.toggle('active', cameraEnabled); };
