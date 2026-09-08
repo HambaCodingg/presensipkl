@@ -101,7 +101,6 @@ if ($_SESSION["level"] != 'Admin' and $_SESSION["level"] != 'admin') {
                                 <th>Tanggal</th>
                                 <th>Jam</th>
                                 <th>Kegiatan</th>
-                                <th>Meeting</th>
                                 <th>Aksi</th>
                             </tr>
                         </thead>
@@ -144,13 +143,6 @@ if ($_SESSION["level"] != 'Admin' and $_SESSION["level"] != 'admin') {
                                     </td>
                                     <td><?php echo $data['waktu']; ?></td>
                                     <td><?php echo $data['kegiatan']; ?></td>
-                                    <td>
-                                        <?php if (!empty($data['meeting_enabled'])): ?>
-                                            <span class="label label-info"><i class="fa fa-video-camera"></i> Internal</span>
-                                        <?php else: ?>
-                                            <span class="text-muted">-</span>
-                                        <?php endif; ?>
-                                    </td>
                                     <td>
                                         <button id_siswa="<?php echo $data['id_siswa']; ?>" id_kegiatan="<?php echo $data['id_kegiatan']; ?>" class="ubah_kegiatan cetak btn btn-warning"><i class="fa fa-edit"></i></button>
                                         <a href="apps/data_kegiatan/hapus.php?id_kegiatan=<?php echo $data['id_kegiatan']; ?>" class="btn-hapus-kegiatan btn btn-danger btn-circle"><i class="fa fa-trash"></i></a>

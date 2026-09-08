@@ -142,9 +142,24 @@ CREATE TABLE `tbl_kegiatan` (
   `kegiatan` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `waktu_awal` time DEFAULT NULL,
   `waktu_akhir` time DEFAULT NULL,
-  `tanggal` date DEFAULT NULL,
-  `meeting_enabled` tinyint(1) NOT NULL DEFAULT '0',
-  `meeting_title` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL
+  `tanggal` date DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Struktur dari tabel `tbl_zoom`
+--
+
+CREATE TABLE `tbl_zoom` (
+  `id_zoom` int NOT NULL,
+  `id_siswa` int NOT NULL,
+  `judul` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
+  `tanggal` date NOT NULL,
+  `waktu_awal` time NOT NULL,
+  `waktu_akhir` time NOT NULL,
+  `dibuat_oleh` int DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id_zoom`),
+  KEY `idx_zoom_siswa_tanggal` (`id_siswa`, `tanggal`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -426,6 +441,18 @@ ALTER TABLE `tbl_alasan_asrama`
 --
 ALTER TABLE `tbl_kegiatan`
   MODIFY `id_kegiatan` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=174;
+
+--
+-- AUTO_INCREMENT untuk tabel `tbl_zoom`
+--
+ALTER TABLE `tbl_zoom`
+  MODIFY `id_zoom` int NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT untuk tabel `tbl_meeting_signals`
+--
+ALTER TABLE `tbl_meeting_signals`
+  MODIFY `id_signal` bigint NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT untuk tabel `tbl_lokasi_siswa`

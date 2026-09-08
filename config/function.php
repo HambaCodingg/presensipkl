@@ -246,7 +246,7 @@ function DataKegiatan($sql)
     include 'database.php';
     $sql = "SELECT tbl_siswa.id_siswa, tbl_siswa.nama, 
     tbl_siswa.perusahaan, tbl_kegiatan.id_kegiatan, 
-    tbl_kegiatan.kegiatan, tbl_kegiatan.tanggal, tbl_kegiatan.meeting_enabled,
+    tbl_kegiatan.kegiatan, tbl_kegiatan.tanggal,
     DATE_FORMAT(tbl_kegiatan.tanggal, '%W') AS hari, 
     CONCAT(SUBSTRING(tbl_kegiatan.waktu_awal, 1, 5), ' - ', SUBSTRING(tbl_kegiatan.waktu_akhir, 1, 5)) AS waktu
     FROM tbl_siswa JOIN tbl_kegiatan ON 
@@ -262,7 +262,7 @@ function CariKegiatan($nama, $tanggal_awal, $tanggal_akhir)
     include 'database.php';
     $sql = "SELECT tbl_siswa.id_siswa, tbl_siswa.nama, 
     tbl_siswa.perusahaan, tbl_kegiatan.id_kegiatan, 
-    tbl_kegiatan.kegiatan, tbl_kegiatan.tanggal, tbl_kegiatan.meeting_enabled,
+    tbl_kegiatan.kegiatan, tbl_kegiatan.tanggal,
     DATE_FORMAT(tbl_kegiatan.tanggal, '%W') AS hari, 
     CONCAT(SUBSTRING(tbl_kegiatan.waktu_awal, 1, 5), ' - ', SUBSTRING(tbl_kegiatan.waktu_akhir, 1, 5)) AS waktu
     FROM tbl_siswa JOIN tbl_kegiatan ON 

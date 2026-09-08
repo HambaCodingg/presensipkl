@@ -21,7 +21,7 @@ if ($room_id <= 0) {
 
 $level = strtolower($_SESSION['level'] ?? '');
 $id_siswa = (int) ($_SESSION['id_siswa'] ?? 0);
-$access_stmt = $kon->prepare('SELECT id_siswa FROM tbl_kegiatan WHERE id_kegiatan = ? AND meeting_enabled = 1 LIMIT 1');
+$access_stmt = $kon->prepare('SELECT id_siswa FROM tbl_zoom WHERE id_zoom = ? LIMIT 1');
 if (!$access_stmt) {
     http_response_code(503);
     echo json_encode(['error' => 'Fitur meeting belum dimigrasikan']);

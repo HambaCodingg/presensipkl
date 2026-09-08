@@ -33,10 +33,9 @@ if (strtolower($_SESSION['level']) === 'siswa' && !empty($_SESSION['id_siswa']))
     }
 
     $meeting_query = mysqli_query($kon, "
-        SELECT id_kegiatan, meeting_title, kegiatan, tanggal, waktu_awal, waktu_akhir
-        FROM tbl_kegiatan
+        SELECT id_zoom, judul, tanggal, waktu_awal, waktu_akhir
+        FROM tbl_zoom
         WHERE id_siswa = {$id_siswa_home}
-            AND meeting_enabled = 1
             AND tanggal >= CURDATE()
         ORDER BY tanggal ASC, waktu_awal ASC
         LIMIT 5
@@ -241,11 +240,11 @@ usort($podium_bulanan, function ($a, $b) {
                                     ?>
                                     <div class="meeting-item">
                                         <div>
-                                            <strong><?php echo htmlspecialchars($meeting['meeting_title'] ?: $meeting['kegiatan'], ENT_QUOTES, 'UTF-8'); ?></strong>
+                                            <strong><?php echo htmlspecialchars($meeting['judul'], ENT_QUOTES, 'UTF-8'); ?></strong>
                                             <small><?php echo htmlspecialchars($meeting['tanggal'] . ' | ' . $meeting['waktu_awal'] . ' - ' . $meeting['waktu_akhir'], ENT_QUOTES, 'UTF-8'); ?></small>
                                         </div>
                                         <?php if ($meeting_is_open): ?>
-                                            <a class="btn btn-success btn-sm" href="apps/meeting.php?id_kegiatan=<?php echo (int) $meeting['id_kegiatan']; ?>" target="_blank"><i class="fa fa-video-camera"></i> Ikuti</a>
+                                            <a class="btn btn-success btn-sm" href="apps/meeting.php?id_zoom=<?php echo (int) $meeting['id_zoom']; ?>" target="_blank"><i class="fa fa-video-camera"></i> Ikuti</a>
                                         <?php elseif ($meeting_now < ($meeting['tanggal'] . ' ' . $meeting['waktu_awal'])): ?>
                                             <span class="meeting-upcoming">Belum dimulai</span>
                                         <?php else: ?>

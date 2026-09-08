@@ -6,12 +6,12 @@ if (empty($_SESSION['kode_pengguna'])) {
 }
 
 include '../config/database.php';
-$id_kegiatan = (int) ($_GET['id_kegiatan'] ?? 0);
+$id_zoom = (int) ($_GET['id_zoom'] ?? $_GET['id_kegiatan'] ?? 0);
 $id_siswa = (int) ($_SESSION['id_siswa'] ?? 0);
 $level = strtolower($_SESSION['level'] ?? '');
 
-$stmt = $kon->prepare('SELECT k.*, s.nama FROM tbl_kegiatan k INNER JOIN tbl_siswa s ON s.id_siswa = k.id_siswa WHERE k.id_kegiatan = ? AND k.meeting_enabled = 1 LIMIT 1');
-$stmt->bind_param('i', $id_kegiatan);
+$stmt = $kon->prepare('SELECT z.*, s.nama FROM tbl_zoom z INNER JOIN tbl_siswa s ON s.id_siswa = z.id_siswa WHERE z.id_zoom = ? LIMIT 1');
+$stmt->bind_param('i', $id_zoom);
 $stmt->execute();
 $meeting = $stmt->get_result()->fetch_assoc();
 
@@ -21,7 +21,7 @@ if (!$meeting || ($level === 'siswa' && (int) $meeting['id_siswa'] !== $id_siswa
 }
 
 $display_name = $_SESSION['nama_admin'] ?? $_SESSION['nama_siswa'] ?? $_SESSION['username'];
-$meeting_title = $meeting['meeting_title'] ?: $meeting['kegiatan'];
+$meeting_title = $meeting['judul'];
 ?>
 <!doctype html>
 <html lang="id">
@@ -66,7 +66,7 @@ $meeting_title = $meeting['meeting_title'] ?: $meeting['kegiatan'];
 </div>
 <script>
 (function () {
-    var roomId = <?php echo (int) $id_kegiatan; ?>;
+    var roomId = <?php echo (int) $id_zoom; ?>;
     var myId = <?php echo json_encode(session_id()); ?>;
     var displayName = <?php echo json_encode($display_name); ?>;
     var signalUrl = 'meeting_signal.php';

@@ -21,8 +21,6 @@ if (isset($_POST['edit_kegiatan'])) {
     $waktu_awal = $_POST["waktu_awal"];
     $waktu_akhir = $_POST["waktu_akhir"];
     $kegiatan = $_POST["kegiatan"];
-    $meeting_enabled = isset($_POST['meeting_enabled']) ? 1 : 0;
-    $meeting_title = input($_POST['meeting_title'] ?? '');
 
     if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
@@ -30,9 +28,7 @@ if (isset($_POST['edit_kegiatan'])) {
         kegiatan = '$kegiatan', 
         waktu_awal = '$waktu_awal',
         waktu_akhir = '$waktu_akhir', 
-        tanggal = '$tanggal',
-        meeting_enabled = '$meeting_enabled',
-        meeting_title = '$meeting_title'
+        tanggal = '$tanggal'
         WHERE id_kegiatan = '$id_kegiatan';";
         $edit_kegiatan = mysqli_query($kon, $sql);
 
@@ -56,7 +52,7 @@ $id_kegiatan = $_POST['id_kegiatan'];
 include '../../config/database.php';
 
 //Seleksi data berdasarkan id_absensi dari AJAX untuk menampilkan ke form absensi
-$query = "SELECT id_kegiatan, kegiatan, waktu_awal, waktu_akhir, tanggal, meeting_enabled, meeting_title
+$query = "SELECT id_kegiatan, kegiatan, waktu_awal, waktu_akhir, tanggal
         FROM tbl_kegiatan WHERE id_kegiatan = '$id_kegiatan';";
 $result = $kon->query($query);
 $row = $result->fetch_assoc();
@@ -64,8 +60,6 @@ $waktu_awal = $row['waktu_awal'];
 $waktu_akhir = $row['waktu_akhir'];
 $tanggal = $row['tanggal'];
 $kegiatan = $row['kegiatan'];
-$meeting_enabled = (int) ($row['meeting_enabled'] ?? 0);
-$meeting_title = $row['meeting_title'] ?? '';
 ?>
 
 <form action="apps/data_kegiatan/edit.php" method="post" enctype="multipart/form-data">
@@ -94,15 +88,6 @@ $meeting_title = $row['meeting_title'] ?? '';
             <div class="form-group">
                 <label>Kegiatan :</label>
                 <input type="text" name="kegiatan" id="kegiatan" class="form-control" value="<?php echo $kegiatan; ?>" placeholder="Masukkan Kegiatan Harian">
-            </div>
-        </div>
-        <div class="col-sm-12">
-            <div class="checkbox">
-                <label><input type="checkbox" name="meeting_enabled" value="1" <?php echo $meeting_enabled ? 'checked' : ''; ?>> Jadikan sebagai meeting online internal</label>
-            </div>
-            <div class="form-group">
-                <label>Judul Meeting :</label>
-                <input type="text" name="meeting_title" class="form-control" value="<?php echo htmlspecialchars($meeting_title, ENT_QUOTES, 'UTF-8'); ?>" placeholder="Contoh: Pembekalan Minggu Pertama">
             </div>
         </div>
     </div>

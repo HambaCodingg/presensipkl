@@ -58,6 +58,7 @@ $allowed_pages = [
     'data_absensi'  => "apps/data_absensi/index.php",
     'data_asrama'   => "apps/data_asrama/index.php",
     'data_kegiatan' => "apps/data_kegiatan/index.php",
+    'data_zoom'     => "apps/data_zoom/index.php",
     'pengaturan'    => "apps/pengaturan/index.php",
     'absen'         => "apps/pengguna/absen.php",
     'absen_asrama'  => "apps/pengguna/absen_asrama.php",
@@ -562,6 +563,9 @@ function is_active($key, $current)
                     </li>
                     <li class="<?php echo is_active('data_kegiatan', $current); ?>">
                         <a href="?page=data_kegiatan"><em class="fa fa-book"></em><span>Jurnal Kegiatan</span></a>
+                    </li>
+                    <li class="<?php echo is_active('data_zoom', $current); ?>">
+                        <a href="?page=data_zoom"><em class="fa fa-video-camera"></em><span>Data Zoom</span></a>
                     </li>
                     <li class="<?php echo is_active('admin', $current); ?>">
                         <a href="?page=admin"><em class="fa fa-user"></em><span>Administrator</span></a>
