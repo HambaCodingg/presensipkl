@@ -106,6 +106,8 @@ $meeting_title = $meeting['judul'];
         var video = tile.querySelector('video');
         video.srcObject = stream;
         video.muted = id === 'local';
+        video.onloadedmetadata = function () { video.play().catch(function () {}); };
+        video.oncanplay = function () { video.play().catch(function () {}); };
         video.play().catch(function () {
             document.getElementById('meetingNote').textContent = 'Klik halaman meeting sekali agar suara peserta terdengar.';
         });
@@ -115,6 +117,12 @@ $meeting_title = $meeting['judul'];
             tile.classList.add('screen-presenter');
             tile.querySelector('.video-name').textContent = (presenters[id] || name || 'Peserta') + ' (Presentasi)';
         }
+    }
+
+    function removePeerTile(peerId) {
+        var tile = document.getElementById('tile-' + peerId);
+        if (tile) tile.remove();
+        delete remoteStreams[peerId];
     }
 
     function send(type, payload, recipient) {
@@ -194,9 +202,22 @@ $meeting_title = $meeting['judul'];
             {urls:'stun:stun.cloudflare.com:3478'}
         ] });
         peers[peerId] = pc;
+        pc.isPolite = myId > peerId;
+        pc.makingOffer = false;
+        pc.ignoreOffer = false;
         pendingCandidates[peerId] = [];
         localStream.getTracks().forEach(function (track) { pc.addTrack(track, localStream); });
         pc.onicecandidate = function (event) { if (event.candidate) send('ice', event.candidate, peerId); };
+        pc.onnegotiationneeded = function () {
+            pc.makingOffer = true;
+            pc.createOffer().then(function (offer) {
+                return pc.setLocalDescription(offer);
+            }).then(function () {
+                return send('offer', pc.localDescription, peerId);
+            }).catch(function () {}).finally(function () {
+                pc.makingOffer = false;
+            });
+        };
         pc.ontrack = function (event) {
             var stream = event.streams[0] || remoteStreams[peerId] || new MediaStream();
             remoteStreams[peerId] = stream;
@@ -209,19 +230,29 @@ $meeting_title = $meeting['judul'];
             }
             if (pc.iceConnectionState === 'closed') {
                 delete peers[peerId];
+                removePeerTile(peerId);
             }
         };
         pc.onconnectionstatechange = function () {
             if (pc.connectionState === 'disconnected') {
                 setTimeout(function () {
-                    if (pc.connectionState === 'disconnected') pc.restartIce();
+                    if (pc.connectionState === 'disconnected') {
+                        pc.close();
+                        delete peers[peerId];
+                        removePeerTile(peerId);
+                        createPeer(peerId, myId < peerId);
+                    }
                 }, 1500);
             }
             if (pc.connectionState === 'failed') {
-                pc.restartIce();
+                pc.close();
+                delete peers[peerId];
+                removePeerTile(peerId);
+                setTimeout(function () {
+                    createPeer(peerId, myId < peerId);
+                }, 1500);
             }
         };
-        if (offerer) pc.createOffer().then(function (offer) { return pc.setLocalDescription(offer); }).then(function () { return send('offer', pc.localDescription, peerId); });
         return pc;
     }
 
@@ -234,9 +265,15 @@ $meeting_title = $meeting['judul'];
         }
         if (signal.signal_type === 'offer') {
             pc = createPeer(signal.sender_id, false);
-            pc.setRemoteDescription(payload).then(function () {
+            var offerCollision = pc.makingOffer || pc.signalingState !== 'stable';
+            pc.ignoreOffer = !pc.isPolite && offerCollision;
+            if (pc.ignoreOffer) return;
+            var setOffer = pc.isPolite && offerCollision
+                ? pc.setLocalDescription({type:'rollback'}).then(function () { return pc.setRemoteDescription(payload); })
+                : pc.setRemoteDescription(payload);
+            setOffer.then(function () {
                 return Promise.all((pendingCandidates[signal.sender_id] || []).map(function (candidate) { return pc.addIceCandidate(candidate); }));
-            }).then(function () { pendingCandidates[signal.sender_id] = []; return pc.createAnswer(); }).then(function (answer) { return pc.setLocalDescription(answer); }).then(function () { return send('answer', pc.localDescription, signal.sender_id); });
+            }).then(function () { pendingCandidates[signal.sender_id] = []; return pc.createAnswer(); }).then(function (answer) { return pc.setLocalDescription(answer); }).then(function () { return send('answer', pc.localDescription, signal.sender_id); }).catch(function () {});
         } else if (signal.signal_type === 'answer' && peers[signal.sender_id]) {
             peers[signal.sender_id].setRemoteDescription(payload).then(function () {
                 return Promise.all((pendingCandidates[signal.sender_id] || []).map(function (candidate) { return peers[signal.sender_id].addIceCandidate(candidate); }));
