@@ -79,6 +79,17 @@ $meeting_title = $meeting['judul'];
     var screenStream = null;
     var sharingScreen = false;
     var cameraTrack = null;
+    var screenAudioSenders = [];
+
+    function attendanceRequest(action) {
+        return fetch('../apps/zoom_attendance.php', {
+            method:'POST',
+            body:new URLSearchParams({action:action, id_zoom:roomId}),
+            credentials:'same-origin'
+        }).catch(function () {});
+    }
+
+    setInterval(function () { attendanceRequest('checkin'); }, 30000);
 
     function addTile(id, stream, name) {
         var tile = document.getElementById('tile-' + id);
@@ -128,7 +139,12 @@ $meeting_title = $meeting['judul'];
         screenStream.getTracks().forEach(function (track) { track.stop(); });
         screenStream = null;
         sharingScreen = false;
-        return replaceVideoTrack(cameraTrack).then(function () {
+        return Promise.all(screenAudioSenders.map(function (entry) {
+            return peers[entry.peerId] ? peers[entry.peerId].removeTrack(entry.sender) : Promise.resolve();
+        })).then(function () {
+            screenAudioSenders = [];
+            return replaceVideoTrack(cameraTrack);
+        }).then(function () {
             document.getElementById('toggleScreen').classList.remove('active');
             document.getElementById('meetingNote').textContent = 'Berbagi layar dihentikan.';
             return screenRequest('screen_release');
@@ -141,17 +157,31 @@ $meeting_title = $meeting['judul'];
                 alert('Peserta lain sedang berbagi layar. Tunggu sampai selesai.');
                 return;
             }
-            return navigator.mediaDevices.getDisplayMedia({video:true, audio:false}).then(function (stream) {
+            return navigator.mediaDevices.getDisplayMedia({
+                video: { displaySurface:'browser', cursor:'always' },
+                audio: { suppressLocalAudioPlayback:false },
+                preferCurrentTab: false,
+                selfBrowserSurface: 'include',
+                surfaceSwitching: 'include'
+            }).then(function (stream) {
                 screenStream = stream;
                 sharingScreen = true;
                 var screenTrack = stream.getVideoTracks()[0];
                 return replaceVideoTrack(screenTrack).then(function () {
+                    stream.getAudioTracks().forEach(function (audioTrack) {
+                        Object.keys(peers).forEach(function (peerId) {
+                            screenAudioSenders.push({peerId:peerId, sender:peers[peerId].addTrack(audioTrack, stream)});
+                        });
+                    });
                     addTile('local', screenStream, displayName + ' (Presentasi)');
                     document.getElementById('toggleScreen').classList.add('active');
                     document.getElementById('meetingNote').textContent = 'Anda sedang berbagi layar. Peserta lain tidak dapat berbagi sampai selesai.';
                     screenTrack.onended = stopScreenShare;
                 });
-            }).catch(function () { return screenRequest('screen_release'); });
+            }).catch(function (error) {
+                screenRequest('screen_release');
+                if (error.name !== 'AbortError') alert('Tab atau layar tidak dapat dibagikan. Pastikan website menggunakan HTTPS dan izinkan akses berbagi layar.');
+            });
         });
     }
 
@@ -230,6 +260,7 @@ $meeting_title = $meeting['judul'];
         cameraTrack = stream.getVideoTracks()[0];
         addTile('local', stream, displayName + ' (Anda)');
         document.getElementById('meetingNote').textContent = 'Meeting aktif. Bagikan halaman ini kepada peserta yang dijadwalkan.';
+        attendanceRequest('checkin');
         send('join', {name:displayName});
         poll();
     }).catch(function () { document.getElementById('meetingNote').textContent = 'Kamera atau mikrofon tidak dapat diakses. Izinkan akses perangkat lalu muat ulang.'; });
@@ -237,7 +268,7 @@ $meeting_title = $meeting['judul'];
     document.getElementById('toggleMic').onclick = function () { micEnabled = !micEnabled; localStream.getAudioTracks().forEach(function (track) { track.enabled = micEnabled; }); this.classList.toggle('active', micEnabled); };
     document.getElementById('toggleCamera').onclick = function () { cameraEnabled = !cameraEnabled; localStream.getVideoTracks().forEach(function (track) { track.enabled = cameraEnabled; }); this.classList.toggle('active', cameraEnabled); };
     document.getElementById('toggleScreen').onclick = function () { sharingScreen ? stopScreenShare() : startScreenShare(); };
-    document.getElementById('leaveMeeting').onclick = function () { if (sharingScreen) stopScreenShare(); if (localStream) localStream.getTracks().forEach(function (track) { track.stop(); }); Object.values(peers).forEach(function (pc) { pc.close(); }); screenRequest('screen_release'); window.location.href = '../index.php?page=beranda'; };
+    document.getElementById('leaveMeeting').onclick = function () { if (sharingScreen) stopScreenShare(); if (localStream) localStream.getTracks().forEach(function (track) { track.stop(); }); Object.values(peers).forEach(function (pc) { pc.close(); }); screenRequest('screen_release'); attendanceRequest('leave'); window.location.href = '../index.php?page=beranda'; };
 })();
 </script>
 </body>

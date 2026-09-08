@@ -188,6 +188,24 @@ CREATE TABLE `tbl_meeting_screen_share` (
   PRIMARY KEY (`room_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Struktur dari tabel `tbl_zoom_kehadiran`
+--
+
+CREATE TABLE `tbl_zoom_kehadiran` (
+  `id_kehadiran` bigint NOT NULL,
+  `id_zoom` int NOT NULL,
+  `kode_pengguna` varchar(4) NOT NULL,
+  `nama` varchar(255) NOT NULL,
+  `level` varchar(50) NOT NULL,
+  `joined_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `last_seen` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `left_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id_kehadiran`),
+  UNIQUE KEY `uq_zoom_kehadiran` (`id_zoom`,`kode_pengguna`),
+  KEY `idx_zoom_kehadiran_zoom` (`id_zoom`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 -- --------------------------------------------------------
 
 --

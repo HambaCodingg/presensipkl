@@ -37,3 +37,17 @@ CREATE TABLE IF NOT EXISTS tbl_meeting_screen_share (
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (room_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE IF NOT EXISTS tbl_zoom_kehadiran (
+    id_kehadiran BIGINT NOT NULL AUTO_INCREMENT,
+    id_zoom INT NOT NULL,
+    kode_pengguna VARCHAR(4) NOT NULL,
+    nama VARCHAR(255) NOT NULL,
+    level VARCHAR(50) NOT NULL,
+    joined_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_seen DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    left_at DATETIME DEFAULT NULL,
+    PRIMARY KEY (id_kehadiran),
+    UNIQUE KEY uq_zoom_kehadiran (id_zoom, kode_pengguna),
+    KEY idx_zoom_kehadiran_zoom (id_zoom)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;

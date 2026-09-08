@@ -59,6 +59,7 @@ $allowed_pages = [
     'data_asrama'   => "apps/data_asrama/index.php",
     'data_kegiatan' => "apps/data_kegiatan/index.php",
     'data_zoom'     => "apps/data_zoom/index.php",
+    'kehadiran_zoom' => "apps/data_zoom/kehadiran.php",
     'pengaturan'    => "apps/pengaturan/index.php",
     'absen'         => "apps/pengguna/absen.php",
     'absen_asrama'  => "apps/pengguna/absen_asrama.php",
