@@ -3,9 +3,12 @@ ALTER TABLE tbl_kegiatan
     DROP COLUMN IF EXISTS meeting_enabled,
     DROP COLUMN IF EXISTS meeting_title;
 
+-- Jika tbl_zoom lama sudah ada dengan id_siswa, jalankan manual sekali:
+-- ALTER TABLE tbl_zoom DROP FOREIGN KEY fk_zoom_siswa;
+-- ALTER TABLE tbl_zoom DROP COLUMN id_siswa;
+
 CREATE TABLE IF NOT EXISTS tbl_zoom (
     id_zoom INT NOT NULL AUTO_INCREMENT,
-    id_siswa INT NOT NULL,
     judul VARCHAR(255) NOT NULL,
     tanggal DATE NOT NULL,
     waktu_awal TIME NOT NULL,
@@ -13,8 +16,7 @@ CREATE TABLE IF NOT EXISTS tbl_zoom (
     dibuat_oleh INT DEFAULT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id_zoom),
-    KEY idx_zoom_siswa_tanggal (id_siswa, tanggal),
-    CONSTRAINT fk_zoom_siswa FOREIGN KEY (id_siswa) REFERENCES tbl_siswa (id_siswa) ON DELETE CASCADE
+    KEY idx_zoom_tanggal (tanggal)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE IF NOT EXISTS tbl_meeting_signals (

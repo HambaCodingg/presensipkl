@@ -7,15 +7,14 @@ if (empty($_SESSION['kode_pengguna'])) {
 
 include '../config/database.php';
 $id_zoom = (int) ($_GET['id_zoom'] ?? $_GET['id_kegiatan'] ?? 0);
-$id_siswa = (int) ($_SESSION['id_siswa'] ?? 0);
 $level = strtolower($_SESSION['level'] ?? '');
 
-$stmt = $kon->prepare('SELECT z.*, s.nama FROM tbl_zoom z INNER JOIN tbl_siswa s ON s.id_siswa = z.id_siswa WHERE z.id_zoom = ? LIMIT 1');
+$stmt = $kon->prepare('SELECT z.* FROM tbl_zoom z WHERE z.id_zoom = ? LIMIT 1');
 $stmt->bind_param('i', $id_zoom);
 $stmt->execute();
 $meeting = $stmt->get_result()->fetch_assoc();
 
-if (!$meeting || ($level === 'siswa' && (int) $meeting['id_siswa'] !== $id_siswa)) {
+if (!$meeting) {
     http_response_code(403);
     exit('Meeting tidak tersedia untuk akun ini.');
 }

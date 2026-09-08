@@ -20,8 +20,7 @@ if ($room_id <= 0) {
 }
 
 $level = strtolower($_SESSION['level'] ?? '');
-$id_siswa = (int) ($_SESSION['id_siswa'] ?? 0);
-$access_stmt = $kon->prepare('SELECT id_siswa FROM tbl_zoom WHERE id_zoom = ? LIMIT 1');
+$access_stmt = $kon->prepare('SELECT id_zoom FROM tbl_zoom WHERE id_zoom = ? LIMIT 1');
 if (!$access_stmt) {
     http_response_code(503);
     echo json_encode(['error' => 'Fitur meeting belum dimigrasikan']);
@@ -30,7 +29,7 @@ if (!$access_stmt) {
 $access_stmt->bind_param('i', $room_id);
 $access_stmt->execute();
 $meeting_access = $access_stmt->get_result()->fetch_assoc();
-if (!$meeting_access || ($level === 'siswa' && (int) $meeting_access['id_siswa'] !== $id_siswa)) {
+if (!$meeting_access) {
     http_response_code(403);
     echo json_encode(['error' => 'Tidak memiliki akses ke meeting ini']);
     exit;

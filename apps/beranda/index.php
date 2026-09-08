@@ -35,8 +35,7 @@ if (strtolower($_SESSION['level']) === 'siswa' && !empty($_SESSION['id_siswa']))
     $meeting_query = mysqli_query($kon, "
         SELECT id_zoom, judul, tanggal, waktu_awal, waktu_akhir
         FROM tbl_zoom
-        WHERE id_siswa = {$id_siswa_home}
-            AND tanggal >= CURDATE()
+        WHERE tanggal >= CURDATE()
         ORDER BY tanggal ASC, waktu_awal ASC
         LIMIT 5
     ");

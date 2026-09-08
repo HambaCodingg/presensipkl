@@ -151,7 +151,6 @@ CREATE TABLE `tbl_kegiatan` (
 
 CREATE TABLE `tbl_zoom` (
   `id_zoom` int NOT NULL,
-  `id_siswa` int NOT NULL,
   `judul` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
   `tanggal` date NOT NULL,
   `waktu_awal` time NOT NULL,
@@ -159,7 +158,7 @@ CREATE TABLE `tbl_zoom` (
   `dibuat_oleh` int DEFAULT NULL,
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id_zoom`),
-  KEY `idx_zoom_siswa_tanggal` (`id_siswa`, `tanggal`)
+  KEY `idx_zoom_tanggal` (`tanggal`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
