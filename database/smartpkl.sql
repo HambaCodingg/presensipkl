@@ -177,6 +177,17 @@ CREATE TABLE `tbl_meeting_signals` (
   KEY `idx_meeting_signal_room` (`room_id`, `id_signal`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Struktur dari tabel `tbl_meeting_screen_share`
+--
+
+CREATE TABLE `tbl_meeting_screen_share` (
+  `room_id` int NOT NULL,
+  `session_id` varchar(128) NOT NULL,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`room_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 -- --------------------------------------------------------
 
 --

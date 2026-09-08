@@ -35,6 +35,51 @@ if (!$meeting_access) {
     exit;
 }
 
+if ($action === 'screen_status') {
+    $stmt = $kon->prepare('SELECT session_id FROM tbl_meeting_screen_share WHERE room_id = ? AND updated_at >= DATE_SUB(NOW(), INTERVAL 30 SECOND) LIMIT 1');
+    if (!$stmt) {
+        echo json_encode(['sharing' => false]);
+        exit;
+    }
+    $stmt->bind_param('i', $room_id);
+    $stmt->execute();
+    $screen = $stmt->get_result()->fetch_assoc();
+    echo json_encode(['sharing' => (bool) $screen, 'mine' => $screen && $screen['session_id'] === $session_id]);
+    exit;
+}
+
+if ($action === 'screen_acquire') {
+    $cleanup = $kon->prepare('DELETE FROM tbl_meeting_screen_share WHERE room_id = ? AND updated_at < DATE_SUB(NOW(), INTERVAL 30 SECOND)');
+    $cleanup->bind_param('i', $room_id);
+    $cleanup->execute();
+    $stmt = $kon->prepare('INSERT IGNORE INTO tbl_meeting_screen_share (room_id, session_id, updated_at) VALUES (?, ?, NOW())');
+    if (!$stmt) {
+        http_response_code(503);
+        echo json_encode(['ok' => false, 'message' => 'Fitur berbagi layar belum dimigrasikan']);
+        exit;
+    }
+    $stmt->bind_param('is', $room_id, $session_id);
+    $stmt->execute();
+    echo json_encode(['ok' => $stmt->affected_rows === 1]);
+    exit;
+}
+
+if ($action === 'screen_refresh') {
+    $stmt = $kon->prepare('UPDATE tbl_meeting_screen_share SET updated_at = NOW() WHERE room_id = ? AND session_id = ?');
+    $stmt->bind_param('is', $room_id, $session_id);
+    $stmt->execute();
+    echo json_encode(['ok' => true]);
+    exit;
+}
+
+if ($action === 'screen_release') {
+    $stmt = $kon->prepare('DELETE FROM tbl_meeting_screen_share WHERE room_id = ? AND session_id = ?');
+    $stmt->bind_param('is', $room_id, $session_id);
+    $stmt->execute();
+    echo json_encode(['ok' => true]);
+    exit;
+}
+
 if ($action === 'send') {
     $recipient_id = $_POST['recipient_id'] ?? null;
     $signal_type = $_POST['signal_type'] ?? '';

@@ -56,10 +56,11 @@ $meeting_title = $meeting['judul'];
         <strong><?php echo htmlspecialchars($display_name, ENT_QUOTES, 'UTF-8'); ?></strong>
     </header>
     <main id="videoGrid" class="video-grid"></main>
-    <div id="meetingNote" class="meeting-note">Menghubungkan kamera dan mikrofon...</div>
+    <div id="meetingNote" class="meeting-note">Menghubungkan kamera dan mikrofon. Gunakan jaringan stabil untuk hasil terbaik.</div>
     <nav class="meeting-controls">
         <button id="toggleMic" class="active" title="Mute mikrofon"><i class="fa fa-microphone"></i></button>
         <button id="toggleCamera" class="active" title="Matikan kamera"><i class="fa fa-video-camera"></i></button>
+        <button id="toggleScreen" title="Bagikan layar"><i class="fa fa-desktop"></i></button>
         <button id="leaveMeeting" class="leave" title="Keluar meeting"><i class="fa fa-phone"></i></button>
     </nav>
 </div>
@@ -71,9 +72,13 @@ $meeting_title = $meeting['judul'];
     var signalUrl = 'meeting_signal.php';
     var localStream = null;
     var peers = {};
+    var pendingCandidates = {};
     var lastSignalId = 0;
     var micEnabled = true;
     var cameraEnabled = true;
+    var screenStream = null;
+    var sharingScreen = false;
+    var cameraTrack = null;
 
     function addTile(id, stream, name) {
         var tile = document.getElementById('tile-' + id);
@@ -84,7 +89,12 @@ $meeting_title = $meeting['judul'];
             tile.innerHTML = '<video autoplay playsinline></video><span class="video-name"></span>';
             document.getElementById('videoGrid').appendChild(tile);
         }
-        tile.querySelector('video').srcObject = stream;
+        var video = tile.querySelector('video');
+        video.srcObject = stream;
+        video.muted = id === 'local';
+        video.play().catch(function () {
+            document.getElementById('meetingNote').textContent = 'Klik halaman meeting sekali agar suara peserta terdengar.';
+        });
         tile.querySelector('.video-name').textContent = name || 'Peserta';
     }
 
@@ -94,14 +104,87 @@ $meeting_title = $meeting['judul'];
         return fetch(signalUrl, { method:'POST', body:body, credentials:'same-origin' });
     }
 
+    function screenRequest(action) {
+        return fetch(signalUrl, {
+            method:'POST',
+            body:new URLSearchParams({action:action, room_id:roomId}),
+            credentials:'same-origin'
+        }).then(function (response) { return response.json(); });
+    }
+
+    setInterval(function () {
+        if (sharingScreen) screenRequest('screen_refresh');
+    }, 10000);
+
+    function replaceVideoTrack(track) {
+        return Promise.all(Object.keys(peers).map(function (peerId) {
+            var sender = peers[peerId].getSenders().find(function (item) { return item.track && item.track.kind === 'video'; });
+            return sender ? sender.replaceTrack(track) : Promise.resolve();
+        }));
+    }
+
+    function stopScreenShare() {
+        if (!screenStream) return Promise.resolve();
+        screenStream.getTracks().forEach(function (track) { track.stop(); });
+        screenStream = null;
+        sharingScreen = false;
+        return replaceVideoTrack(cameraTrack).then(function () {
+            document.getElementById('toggleScreen').classList.remove('active');
+            document.getElementById('meetingNote').textContent = 'Berbagi layar dihentikan.';
+            return screenRequest('screen_release');
+        });
+    }
+
+    function startScreenShare() {
+        screenRequest('screen_acquire').then(function (lock) {
+            if (!lock.ok) {
+                alert('Peserta lain sedang berbagi layar. Tunggu sampai selesai.');
+                return;
+            }
+            return navigator.mediaDevices.getDisplayMedia({video:true, audio:false}).then(function (stream) {
+                screenStream = stream;
+                sharingScreen = true;
+                var screenTrack = stream.getVideoTracks()[0];
+                return replaceVideoTrack(screenTrack).then(function () {
+                    addTile('local', screenStream, displayName + ' (Presentasi)');
+                    document.getElementById('toggleScreen').classList.add('active');
+                    document.getElementById('meetingNote').textContent = 'Anda sedang berbagi layar. Peserta lain tidak dapat berbagi sampai selesai.';
+                    screenTrack.onended = stopScreenShare;
+                });
+            }).catch(function () { return screenRequest('screen_release'); });
+        });
+    }
+
     function createPeer(peerId, offerer) {
         if (peers[peerId]) return peers[peerId];
-        var pc = new RTCPeerConnection({ iceServers:[{urls:'stun:stun.l.google.com:19302'}] });
+        var pc = new RTCPeerConnection({ iceServers:[
+            {urls:'stun:stun.l.google.com:19302'},
+            {urls:'stun:stun1.l.google.com:19302'},
+            {urls:'stun:stun.cloudflare.com:3478'}
+        ] });
         peers[peerId] = pc;
+        pendingCandidates[peerId] = [];
         localStream.getTracks().forEach(function (track) { pc.addTrack(track, localStream); });
         pc.onicecandidate = function (event) { if (event.candidate) send('ice', event.candidate, peerId); };
         pc.ontrack = function (event) { addTile(peerId, event.streams[0], peerId); };
-        pc.onconnectionstatechange = function () { if (['failed','closed','disconnected'].includes(pc.connectionState)) { pc.close(); delete peers[peerId]; } };
+        pc.oniceconnectionstatechange = function () {
+            if (pc.iceConnectionState === 'failed') {
+                pc.restartIce();
+            }
+            if (pc.iceConnectionState === 'closed') {
+                delete peers[peerId];
+            }
+        };
+        pc.onconnectionstatechange = function () {
+            if (pc.connectionState === 'disconnected') {
+                setTimeout(function () {
+                    if (pc.connectionState === 'disconnected') pc.restartIce();
+                }, 1500);
+            }
+            if (pc.connectionState === 'failed') {
+                pc.restartIce();
+            }
+        };
         if (offerer) pc.createOffer().then(function (offer) { return pc.setLocalDescription(offer); }).then(function () { return send('offer', pc.localDescription, peerId); });
         return pc;
     }
@@ -115,11 +198,19 @@ $meeting_title = $meeting['judul'];
         }
         if (signal.signal_type === 'offer') {
             pc = createPeer(signal.sender_id, false);
-            pc.setRemoteDescription(payload).then(function () { return pc.createAnswer(); }).then(function (answer) { return pc.setLocalDescription(answer); }).then(function () { return send('answer', pc.localDescription, signal.sender_id); });
+            pc.setRemoteDescription(payload).then(function () {
+                return Promise.all((pendingCandidates[signal.sender_id] || []).map(function (candidate) { return pc.addIceCandidate(candidate); }));
+            }).then(function () { pendingCandidates[signal.sender_id] = []; return pc.createAnswer(); }).then(function (answer) { return pc.setLocalDescription(answer); }).then(function () { return send('answer', pc.localDescription, signal.sender_id); });
         } else if (signal.signal_type === 'answer' && peers[signal.sender_id]) {
-            peers[signal.sender_id].setRemoteDescription(payload);
+            peers[signal.sender_id].setRemoteDescription(payload).then(function () {
+                return Promise.all((pendingCandidates[signal.sender_id] || []).map(function (candidate) { return peers[signal.sender_id].addIceCandidate(candidate); }));
+            }).then(function () { pendingCandidates[signal.sender_id] = []; });
         } else if (signal.signal_type === 'ice' && peers[signal.sender_id]) {
-            peers[signal.sender_id].addIceCandidate(payload);
+            if (peers[signal.sender_id].remoteDescription) {
+                peers[signal.sender_id].addIceCandidate(payload);
+            } else {
+                pendingCandidates[signal.sender_id].push(payload);
+            }
         }
     }
 
@@ -131,8 +222,12 @@ $meeting_title = $meeting['judul'];
             .finally(function () { setTimeout(poll, 1200); });
     }
 
-    navigator.mediaDevices.getUserMedia({video:true, audio:true}).then(function (stream) {
+    navigator.mediaDevices.getUserMedia({
+        video: { width:{ideal:640, max:1280}, height:{ideal:360, max:720}, frameRate:{ideal:24, max:30} },
+        audio: { echoCancellation:true, noiseSuppression:true, autoGainControl:true }
+    }).then(function (stream) {
         localStream = stream;
+        cameraTrack = stream.getVideoTracks()[0];
         addTile('local', stream, displayName + ' (Anda)');
         document.getElementById('meetingNote').textContent = 'Meeting aktif. Bagikan halaman ini kepada peserta yang dijadwalkan.';
         send('join', {name:displayName});
@@ -141,7 +236,8 @@ $meeting_title = $meeting['judul'];
 
     document.getElementById('toggleMic').onclick = function () { micEnabled = !micEnabled; localStream.getAudioTracks().forEach(function (track) { track.enabled = micEnabled; }); this.classList.toggle('active', micEnabled); };
     document.getElementById('toggleCamera').onclick = function () { cameraEnabled = !cameraEnabled; localStream.getVideoTracks().forEach(function (track) { track.enabled = cameraEnabled; }); this.classList.toggle('active', cameraEnabled); };
-    document.getElementById('leaveMeeting').onclick = function () { if (localStream) localStream.getTracks().forEach(function (track) { track.stop(); }); Object.values(peers).forEach(function (pc) { pc.close(); }); window.location.href = '../index.php?page=beranda'; };
+    document.getElementById('toggleScreen').onclick = function () { sharingScreen ? stopScreenShare() : startScreenShare(); };
+    document.getElementById('leaveMeeting').onclick = function () { if (sharingScreen) stopScreenShare(); if (localStream) localStream.getTracks().forEach(function (track) { track.stop(); }); Object.values(peers).forEach(function (pc) { pc.close(); }); screenRequest('screen_release'); window.location.href = '../index.php?page=beranda'; };
 })();
 </script>
 </body>

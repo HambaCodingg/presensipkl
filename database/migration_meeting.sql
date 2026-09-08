@@ -30,3 +30,10 @@ CREATE TABLE IF NOT EXISTS tbl_meeting_signals (
     PRIMARY KEY (id_signal),
     KEY idx_meeting_signal_room (room_id, id_signal)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE IF NOT EXISTS tbl_meeting_screen_share (
+    room_id INT NOT NULL,
+    session_id VARCHAR(128) NOT NULL,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (room_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
