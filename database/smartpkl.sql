@@ -142,7 +142,25 @@ CREATE TABLE `tbl_kegiatan` (
   `kegiatan` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `waktu_awal` time DEFAULT NULL,
   `waktu_akhir` time DEFAULT NULL,
-  `tanggal` date DEFAULT NULL
+  `tanggal` date DEFAULT NULL,
+  `meeting_enabled` tinyint(1) NOT NULL DEFAULT '0',
+  `meeting_title` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Struktur dari tabel `tbl_meeting_signals`
+--
+
+CREATE TABLE `tbl_meeting_signals` (
+  `id_signal` bigint NOT NULL AUTO_INCREMENT,
+  `room_id` int NOT NULL,
+  `sender_id` varchar(128) NOT NULL,
+  `recipient_id` varchar(128) DEFAULT NULL,
+  `signal_type` varchar(20) NOT NULL,
+  `payload` longtext NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id_signal`),
+  KEY `idx_meeting_signal_room` (`room_id`, `id_signal`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------

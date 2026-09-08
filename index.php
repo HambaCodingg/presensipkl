@@ -66,7 +66,8 @@ $allowed_pages = [
     'profil'        => "apps/pengguna/profil.php",
     'verify_lokasi' => "apps/pengguna/verify_lokasi.php",
     'lokasi_denied' => "apps/pengguna/lokasi_denied.php",
-    'lokasi_siswa'  => "apps/admin/lokasi_siswa.php"
+    'lokasi_siswa'  => "apps/admin/lokasi_siswa.php",
+    'meeting'       => "apps/meeting.php"
 ];
 
 // ========================= Guard for siswa location permission =========================

@@ -1,0 +1,149 @@
+<?php
+session_start();
+if (empty($_SESSION['kode_pengguna'])) {
+    header('Location: ../login.php');
+    exit;
+}
+
+include '../config/database.php';
+$id_kegiatan = (int) ($_GET['id_kegiatan'] ?? 0);
+$id_siswa = (int) ($_SESSION['id_siswa'] ?? 0);
+$level = strtolower($_SESSION['level'] ?? '');
+
+$stmt = $kon->prepare('SELECT k.*, s.nama FROM tbl_kegiatan k INNER JOIN tbl_siswa s ON s.id_siswa = k.id_siswa WHERE k.id_kegiatan = ? AND k.meeting_enabled = 1 LIMIT 1');
+$stmt->bind_param('i', $id_kegiatan);
+$stmt->execute();
+$meeting = $stmt->get_result()->fetch_assoc();
+
+if (!$meeting || ($level === 'siswa' && (int) $meeting['id_siswa'] !== $id_siswa)) {
+    http_response_code(403);
+    exit('Meeting tidak tersedia untuk akun ini.');
+}
+
+$display_name = $_SESSION['nama_admin'] ?? $_SESSION['nama_siswa'] ?? $_SESSION['username'];
+$meeting_title = $meeting['meeting_title'] ?: $meeting['kegiatan'];
+?>
+<!doctype html>
+<html lang="id">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title><?php echo htmlspecialchars($meeting_title, ENT_QUOTES, 'UTF-8'); ?> | SMART PKL</title>
+    <link rel="stylesheet" href="../template/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../template/css/font-awesome.min.css">
+    <style>
+        :root { --ink:#e2e8f0; --muted:#94a3b8; --panel:#111827; --panel-soft:#1e293b; --accent:#38bdf8; }
+        body { margin:0; min-height:100vh; background:#020617; color:var(--ink); font-family:Segoe UI,sans-serif; }
+        .meeting-shell { display:flex; flex-direction:column; min-height:100vh; }
+        .meeting-header { display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:14px 20px; background:#0f172a; border-bottom:1px solid #334155; }
+        .meeting-header h1 { margin:0; font-size:1.05rem; }
+        .meeting-header small { color:var(--muted); }
+        .video-grid { flex:1; display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:12px; padding:16px; align-content:center; }
+        .video-tile { position:relative; min-height:210px; overflow:hidden; border-radius:10px; background:#1e293b; border:1px solid #334155; }
+        .video-tile video { display:block; width:100%; height:100%; min-height:210px; object-fit:cover; background:#0f172a; }
+        .video-name { position:absolute; left:10px; bottom:8px; padding:4px 8px; border-radius:4px; background:rgba(0,0,0,.65); font-size:.8rem; }
+        .meeting-controls { display:flex; justify-content:center; gap:10px; padding:14px; background:#0f172a; border-top:1px solid #334155; }
+        .meeting-controls button { width:44px; height:44px; border:0; border-radius:50%; color:#fff; background:#334155; }
+        .meeting-controls button.active { background:#0284c7; }
+        .meeting-controls button.leave { background:#dc2626; }
+        .meeting-note { padding:10px 20px; color:var(--muted); text-align:center; font-size:.8rem; }
+        @media (max-width:600px) { .video-grid { grid-template-columns:1fr; } .meeting-header { padding:12px; } }
+    </style>
+</head>
+<body>
+<div class="meeting-shell">
+    <header class="meeting-header">
+        <div><h1><?php echo htmlspecialchars($meeting_title, ENT_QUOTES, 'UTF-8'); ?></h1><small><?php echo htmlspecialchars($meeting['tanggal'] . ' | ' . $meeting['waktu_awal'] . ' - ' . $meeting['waktu_akhir'], ENT_QUOTES, 'UTF-8'); ?></small></div>
+        <strong><?php echo htmlspecialchars($display_name, ENT_QUOTES, 'UTF-8'); ?></strong>
+    </header>
+    <main id="videoGrid" class="video-grid"></main>
+    <div id="meetingNote" class="meeting-note">Menghubungkan kamera dan mikrofon...</div>
+    <nav class="meeting-controls">
+        <button id="toggleMic" class="active" title="Mute mikrofon"><i class="fa fa-microphone"></i></button>
+        <button id="toggleCamera" class="active" title="Matikan kamera"><i class="fa fa-video-camera"></i></button>
+        <button id="leaveMeeting" class="leave" title="Keluar meeting"><i class="fa fa-phone"></i></button>
+    </nav>
+</div>
+<script>
+(function () {
+    var roomId = <?php echo (int) $id_kegiatan; ?>;
+    var myId = <?php echo json_encode(session_id()); ?>;
+    var displayName = <?php echo json_encode($display_name); ?>;
+    var signalUrl = 'meeting_signal.php';
+    var localStream = null;
+    var peers = {};
+    var lastSignalId = 0;
+    var micEnabled = true;
+    var cameraEnabled = true;
+
+    function addTile(id, stream, name) {
+        var tile = document.getElementById('tile-' + id);
+        if (!tile) {
+            tile = document.createElement('div');
+            tile.className = 'video-tile';
+            tile.id = 'tile-' + id;
+            tile.innerHTML = '<video autoplay playsinline></video><span class="video-name"></span>';
+            document.getElementById('videoGrid').appendChild(tile);
+        }
+        tile.querySelector('video').srcObject = stream;
+        tile.querySelector('.video-name').textContent = name || 'Peserta';
+    }
+
+    function send(type, payload, recipient) {
+        var body = new URLSearchParams({ action:'send', room_id:roomId, signal_type:type, payload:JSON.stringify(payload) });
+        if (recipient) body.set('recipient_id', recipient);
+        return fetch(signalUrl, { method:'POST', body:body, credentials:'same-origin' });
+    }
+
+    function createPeer(peerId, offerer) {
+        if (peers[peerId]) return peers[peerId];
+        var pc = new RTCPeerConnection({ iceServers:[{urls:'stun:stun.l.google.com:19302'}] });
+        peers[peerId] = pc;
+        localStream.getTracks().forEach(function (track) { pc.addTrack(track, localStream); });
+        pc.onicecandidate = function (event) { if (event.candidate) send('ice', event.candidate, peerId); };
+        pc.ontrack = function (event) { addTile(peerId, event.streams[0], peerId); };
+        pc.onconnectionstatechange = function () { if (['failed','closed','disconnected'].includes(pc.connectionState)) { pc.close(); delete peers[peerId]; } };
+        if (offerer) pc.createOffer().then(function (offer) { return pc.setLocalDescription(offer); }).then(function () { return send('offer', pc.localDescription, peerId); });
+        return pc;
+    }
+
+    function handleSignal(signal) {
+        var payload = JSON.parse(signal.payload);
+        var pc;
+        if (signal.signal_type === 'join') {
+            if (myId < signal.sender_id) createPeer(signal.sender_id, true);
+            return;
+        }
+        if (signal.signal_type === 'offer') {
+            pc = createPeer(signal.sender_id, false);
+            pc.setRemoteDescription(payload).then(function () { return pc.createAnswer(); }).then(function (answer) { return pc.setLocalDescription(answer); }).then(function () { return send('answer', pc.localDescription, signal.sender_id); });
+        } else if (signal.signal_type === 'answer' && peers[signal.sender_id]) {
+            peers[signal.sender_id].setRemoteDescription(payload);
+        } else if (signal.signal_type === 'ice' && peers[signal.sender_id]) {
+            peers[signal.sender_id].addIceCandidate(payload);
+        }
+    }
+
+    function poll() {
+        fetch(signalUrl + '?action=list&room_id=' + roomId + '&after_id=' + lastSignalId, {credentials:'same-origin'})
+            .then(function (response) { return response.json(); })
+            .then(function (data) { (data.signals || []).forEach(function (signal) { lastSignalId = Math.max(lastSignalId, Number(signal.id_signal)); handleSignal(signal); }); })
+            .catch(function () {})
+            .finally(function () { setTimeout(poll, 1200); });
+    }
+
+    navigator.mediaDevices.getUserMedia({video:true, audio:true}).then(function (stream) {
+        localStream = stream;
+        addTile('local', stream, displayName + ' (Anda)');
+        document.getElementById('meetingNote').textContent = 'Meeting aktif. Bagikan halaman ini kepada peserta yang dijadwalkan.';
+        send('join', {name:displayName});
+        poll();
+    }).catch(function () { document.getElementById('meetingNote').textContent = 'Kamera atau mikrofon tidak dapat diakses. Izinkan akses perangkat lalu muat ulang.'; });
+
+    document.getElementById('toggleMic').onclick = function () { micEnabled = !micEnabled; localStream.getAudioTracks().forEach(function (track) { track.enabled = micEnabled; }); this.classList.toggle('active', micEnabled); };
+    document.getElementById('toggleCamera').onclick = function () { cameraEnabled = !cameraEnabled; localStream.getVideoTracks().forEach(function (track) { track.enabled = cameraEnabled; }); this.classList.toggle('active', cameraEnabled); };
+    document.getElementById('leaveMeeting').onclick = function () { if (localStream) localStream.getTracks().forEach(function (track) { track.stop(); }); Object.values(peers).forEach(function (pc) { pc.close(); }); window.location.href = '../index.php?page=beranda'; };
+})();
+</script>
+</body>
+</html>

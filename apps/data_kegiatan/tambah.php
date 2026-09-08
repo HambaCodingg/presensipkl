@@ -21,11 +21,13 @@ if (isset($_POST['simpan_kegiatan'])) {
     $waktu_awal = $_POST["waktu_awal"];
     $waktu_akhir = $_POST["waktu_akhir"];
     $kegiatan = $_POST["kegiatan"];
+    $meeting_enabled = isset($_POST['meeting_enabled']) ? 1 : 0;
+    $meeting_title = input($_POST['meeting_title'] ?? '');
 
     if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
-        $sql = "INSERT INTO tbl_kegiatan (id_siswa,kegiatan,waktu_awal,waktu_akhir,tanggal) 
-        VALUES ('$id_siswa','$kegiatan','$waktu_awal','$waktu_akhir','$tanggal')";
+        $sql = "INSERT INTO tbl_kegiatan (id_siswa,kegiatan,waktu_awal,waktu_akhir,tanggal,meeting_enabled,meeting_title)
+        VALUES ('$id_siswa','$kegiatan','$waktu_awal','$waktu_akhir','$tanggal','$meeting_enabled','$meeting_title')";
         $simpan_kegiatan = mysqli_query($kon, $sql);
 
         // validasi data
@@ -80,6 +82,15 @@ if (isset($_POST['simpan_kegiatan'])) {
             <div class="form-group">
                 <label>Kegiatan :</label>
                 <input type="text" name="kegiatan" id="kegiatan" class="form-control" value="" placeholder="Masukkan Kegiatan Harian">
+            </div>
+        </div>
+        <div class="col-sm-12">
+            <div class="checkbox">
+                <label><input type="checkbox" name="meeting_enabled" value="1"> Jadikan sebagai meeting online internal</label>
+            </div>
+            <div class="form-group">
+                <label>Judul Meeting :</label>
+                <input type="text" name="meeting_title" class="form-control" placeholder="Contoh: Pembekalan Minggu Pertama">
             </div>
         </div>
     </div>

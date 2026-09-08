@@ -19,6 +19,7 @@ $query = mysqli_query($kon, "SELECT * FROM tbl_site LIMIT 1");
 $row = mysqli_fetch_array($query);
 
 $jadwal_siswa = null;
+$meeting_query = null;
 if (strtolower($_SESSION['level']) === 'siswa' && !empty($_SESSION['id_siswa'])) {
     $id_siswa_home = (int) $_SESSION['id_siswa'];
     $jadwal_query = mysqli_query($kon, "
@@ -30,6 +31,16 @@ if (strtolower($_SESSION['level']) === 'siswa' && !empty($_SESSION['id_siswa']))
     if ($jadwal_query) {
         $jadwal_siswa = mysqli_fetch_assoc($jadwal_query);
     }
+
+    $meeting_query = mysqli_query($kon, "
+        SELECT id_kegiatan, meeting_title, kegiatan, tanggal, waktu_awal, waktu_akhir
+        FROM tbl_kegiatan
+        WHERE id_siswa = {$id_siswa_home}
+            AND meeting_enabled = 1
+            AND tanggal >= CURDATE()
+        ORDER BY tanggal ASC, waktu_awal ASC
+        LIMIT 5
+    ");
 }
 
 $visitor_query = null;
@@ -209,6 +220,39 @@ usort($podium_bulanan, function ($a, $b) {
                                     <strong><?php echo htmlspecialchars(substr($jadwal_siswa['jam_masuk'], 0, 5), ENT_QUOTES, 'UTF-8'); ?> WIB</strong>.
                                 </p>
                                 <small>Absensi setelah batas waktu akan ditolak. Jika terlambat, silakan hubungi pihak terkait.</small>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if ($meeting_query && mysqli_num_rows($meeting_query) > 0): ?>
+                        <div class="meeting-list-section">
+                            <div class="meeting-list-heading">
+                                <div>
+                                    <h5><i class="fa fa-video-camera"></i> Meeting Terjadwal</h5>
+                                    <small>Ruang meeting internal dari admin</small>
+                                </div>
+                            </div>
+                            <div class="meeting-list">
+                                <?php while ($meeting = mysqli_fetch_assoc($meeting_query)): ?>
+                                    <?php
+                                    $meeting_now = date('Y-m-d H:i:s');
+                                    $meeting_is_open = $meeting_now >= ($meeting['tanggal'] . ' ' . $meeting['waktu_awal'])
+                                        && $meeting_now <= ($meeting['tanggal'] . ' ' . $meeting['waktu_akhir']);
+                                    ?>
+                                    <div class="meeting-item">
+                                        <div>
+                                            <strong><?php echo htmlspecialchars($meeting['meeting_title'] ?: $meeting['kegiatan'], ENT_QUOTES, 'UTF-8'); ?></strong>
+                                            <small><?php echo htmlspecialchars($meeting['tanggal'] . ' | ' . $meeting['waktu_awal'] . ' - ' . $meeting['waktu_akhir'], ENT_QUOTES, 'UTF-8'); ?></small>
+                                        </div>
+                                        <?php if ($meeting_is_open): ?>
+                                            <a class="btn btn-success btn-sm" href="apps/meeting.php?id_kegiatan=<?php echo (int) $meeting['id_kegiatan']; ?>" target="_blank"><i class="fa fa-video-camera"></i> Ikuti</a>
+                                        <?php elseif ($meeting_now < ($meeting['tanggal'] . ' ' . $meeting['waktu_awal'])): ?>
+                                            <span class="meeting-upcoming">Belum dimulai</span>
+                                        <?php else: ?>
+                                            <span class="meeting-upcoming">Meeting selesai</span>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php endwhile; ?>
                             </div>
                         </div>
                     <?php endif; ?>
@@ -607,6 +651,27 @@ usort($podium_bulanan, function ($a, $b) {
                         margin: 0;
                         color: #78350f;
                     }
+
+                    .meeting-list-section {
+                        margin: 1.25rem 0 1.5rem;
+                        padding: 1rem 1.25rem;
+                        border: 1px solid rgba(14, 116, 144, .22);
+                        border-radius: 14px;
+                        background: #f0f9ff;
+                    }
+
+                    .meeting-list-heading h5 {
+                        margin: 0;
+                        color: #0c4a6e;
+                        font-weight: 700;
+                    }
+
+                    .meeting-list-heading small,
+                    .meeting-item small { display: block; color: #64748b; }
+                    .meeting-list { margin-top: .75rem; }
+                    .meeting-item { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .75rem 0; border-top: 1px solid #bae6fd; }
+                    .meeting-item strong { color: #0f172a; }
+                    .meeting-upcoming { color: #64748b; font-size: .8rem; }
 
                     .student-schedule-card small {
                         display: block;
