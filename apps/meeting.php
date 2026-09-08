@@ -38,7 +38,9 @@ $meeting_title = $meeting['judul'];
         .meeting-header h1 { margin:0; font-size:1.05rem; }
         .meeting-header small { color:var(--muted); }
         .video-grid { flex:1; display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:12px; padding:16px; align-content:center; }
-        .video-tile { position:relative; min-height:210px; overflow:hidden; border-radius:10px; background:#1e293b; border:1px solid #334155; }
+        .video-tile { position:relative; min-height:210px; overflow:hidden; border-radius:10px; background:#1e293b; border:1px solid #334155; cursor:pointer; }
+        .video-tile.pinned, .video-tile.screen-presenter { grid-column:1 / -1; min-height:65vh; }
+        .video-tile.pinned video, .video-tile.screen-presenter video { min-height:65vh; object-fit:contain; }
         .video-tile video { display:block; width:100%; height:100%; min-height:210px; object-fit:cover; background:#0f172a; }
         .video-name { position:absolute; left:10px; bottom:8px; padding:4px 8px; border-radius:4px; background:rgba(0,0,0,.65); font-size:.8rem; }
         .meeting-controls { display:flex; justify-content:center; gap:10px; padding:14px; background:#0f172a; border-top:1px solid #334155; }
@@ -80,6 +82,8 @@ $meeting_title = $meeting['judul'];
     var sharingScreen = false;
     var cameraTrack = null;
     var screenAudioSenders = [];
+    var remoteStreams = {};
+    var presenters = {};
 
     function attendanceRequest(action) {
         return fetch('../apps/zoom_attendance.php', {
@@ -107,6 +111,11 @@ $meeting_title = $meeting['judul'];
             document.getElementById('meetingNote').textContent = 'Klik halaman meeting sekali agar suara peserta terdengar.';
         });
         tile.querySelector('.video-name').textContent = name || 'Peserta';
+        tile.onclick = function () { tile.classList.toggle('pinned'); };
+        if (presenters[id]) {
+            tile.classList.add('screen-presenter');
+            tile.querySelector('.video-name').textContent = (presenters[id] || name || 'Peserta') + ' (Presentasi)';
+        }
     }
 
     function send(type, payload, recipient) {
@@ -134,6 +143,13 @@ $meeting_title = $meeting['judul'];
         }));
     }
 
+    function renegotiatePeers() {
+        return Promise.all(Object.keys(peers).map(function (peerId) {
+            var pc = peers[peerId];
+            return pc.createOffer().then(function (offer) { return pc.setLocalDescription(offer); }).then(function () { return send('offer', pc.localDescription, peerId); });
+        }));
+    }
+
     function stopScreenShare() {
         if (!screenStream) return Promise.resolve();
         screenStream.getTracks().forEach(function (track) { track.stop(); });
@@ -145,8 +161,11 @@ $meeting_title = $meeting['judul'];
             screenAudioSenders = [];
             return replaceVideoTrack(cameraTrack);
         }).then(function () {
+            return renegotiatePeers();
+        }).then(function () {
             document.getElementById('toggleScreen').classList.remove('active');
             document.getElementById('meetingNote').textContent = 'Berbagi layar dihentikan.';
+            send('screen_stop', {name:displayName});
             return screenRequest('screen_release');
         });
     }
@@ -173,9 +192,12 @@ $meeting_title = $meeting['judul'];
                             screenAudioSenders.push({peerId:peerId, sender:peers[peerId].addTrack(audioTrack, stream)});
                         });
                     });
+                            return renegotiatePeers();
+                        }).then(function () {
                     addTile('local', screenStream, displayName + ' (Presentasi)');
                     document.getElementById('toggleScreen').classList.add('active');
                     document.getElementById('meetingNote').textContent = 'Anda sedang berbagi layar. Peserta lain tidak dapat berbagi sampai selesai.';
+                    send('screen_start', {name:displayName});
                     screenTrack.onended = stopScreenShare;
                 });
             }).catch(function (error) {
@@ -196,7 +218,12 @@ $meeting_title = $meeting['judul'];
         pendingCandidates[peerId] = [];
         localStream.getTracks().forEach(function (track) { pc.addTrack(track, localStream); });
         pc.onicecandidate = function (event) { if (event.candidate) send('ice', event.candidate, peerId); };
-        pc.ontrack = function (event) { addTile(peerId, event.streams[0], peerId); };
+        pc.ontrack = function (event) {
+            var stream = event.streams[0] || remoteStreams[peerId] || new MediaStream();
+            remoteStreams[peerId] = stream;
+            if (event.streams.length === 0) stream.addTrack(event.track);
+            addTile(peerId, stream, peerId);
+        };
         pc.oniceconnectionstatechange = function () {
             if (pc.iceConnectionState === 'failed') {
                 pc.restartIce();
@@ -241,6 +268,17 @@ $meeting_title = $meeting['judul'];
             } else {
                 pendingCandidates[signal.sender_id].push(payload);
             }
+        } else if (signal.signal_type === 'screen_start') {
+            presenters[signal.sender_id] = payload.name || 'Peserta';
+            var presenterTile = document.getElementById('tile-' + signal.sender_id);
+            if (presenterTile) {
+                presenterTile.classList.add('screen-presenter');
+                presenterTile.querySelector('.video-name').textContent = (payload.name || 'Peserta') + ' (Presentasi)';
+            }
+        } else if (signal.signal_type === 'screen_stop') {
+            delete presenters[signal.sender_id];
+            var stoppedTile = document.getElementById('tile-' + signal.sender_id);
+            if (stoppedTile) stoppedTile.classList.remove('screen-presenter');
         }
     }
 

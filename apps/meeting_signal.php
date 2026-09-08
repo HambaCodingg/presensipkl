@@ -84,7 +84,7 @@ if ($action === 'send') {
     $recipient_id = $_POST['recipient_id'] ?? null;
     $signal_type = $_POST['signal_type'] ?? '';
     $payload = $_POST['payload'] ?? '';
-    $allowed_types = ['join', 'offer', 'answer', 'ice', 'leave'];
+    $allowed_types = ['join', 'offer', 'answer', 'ice', 'leave', 'screen_start', 'screen_stop'];
 
     if (!in_array($signal_type, $allowed_types, true) || $payload === '') {
         http_response_code(400);
