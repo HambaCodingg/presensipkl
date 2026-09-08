@@ -81,7 +81,6 @@ $meeting_title = $meeting['judul'];
     var screenStream = null;
     var sharingScreen = false;
     var cameraTrack = null;
-    var screenAudioSenders = [];
     var remoteStreams = {};
     var presenters = {};
 
@@ -143,26 +142,13 @@ $meeting_title = $meeting['judul'];
         }));
     }
 
-    function renegotiatePeers() {
-        return Promise.all(Object.keys(peers).map(function (peerId) {
-            var pc = peers[peerId];
-            return pc.createOffer().then(function (offer) { return pc.setLocalDescription(offer); }).then(function () { return send('offer', pc.localDescription, peerId); });
-        }));
-    }
-
     function stopScreenShare() {
         if (!screenStream) return Promise.resolve();
         screenStream.getTracks().forEach(function (track) { track.stop(); });
         screenStream = null;
         sharingScreen = false;
-        return Promise.all(screenAudioSenders.map(function (entry) {
-            return peers[entry.peerId] ? peers[entry.peerId].removeTrack(entry.sender) : Promise.resolve();
-        })).then(function () {
-            screenAudioSenders = [];
-            return replaceVideoTrack(cameraTrack);
-        }).then(function () {
-            return renegotiatePeers();
-        }).then(function () {
+        return replaceVideoTrack(cameraTrack).then(function () {
+            addTile('local', localStream, displayName + ' (Anda)');
             document.getElementById('toggleScreen').classList.remove('active');
             document.getElementById('meetingNote').textContent = 'Berbagi layar dihentikan.';
             send('screen_stop', {name:displayName});
@@ -187,13 +173,6 @@ $meeting_title = $meeting['judul'];
                 sharingScreen = true;
                 var screenTrack = stream.getVideoTracks()[0];
                 return replaceVideoTrack(screenTrack).then(function () {
-                    stream.getAudioTracks().forEach(function (audioTrack) {
-                        Object.keys(peers).forEach(function (peerId) {
-                            screenAudioSenders.push({peerId:peerId, sender:peers[peerId].addTrack(audioTrack, stream)});
-                        });
-                    });
-                            return renegotiatePeers();
-                        }).then(function () {
                     addTile('local', screenStream, displayName + ' (Presentasi)');
                     document.getElementById('toggleScreen').classList.add('active');
                     document.getElementById('meetingNote').textContent = 'Anda sedang berbagi layar. Peserta lain tidak dapat berbagi sampai selesai.';
