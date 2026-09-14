@@ -40,7 +40,9 @@ function initPklLocationMap() {
     }
     marker.addListener('dragend', function() { setLocation(marker.getPosition()); });
     map.addListener('click', function(event) { setLocation(event.latLng); });
-    var autocomplete = new google.maps.places.Autocomplete(document.getElementById('pkl-map-search'));
+    var autocomplete = new google.maps.places.Autocomplete(document.getElementById('pkl-map-search'), {
+        componentRestrictions: {country: 'id'}
+    });
     autocomplete.bindTo('bounds', map);
     autocomplete.addListener('place_changed', function() {
         var place = autocomplete.getPlace();
@@ -59,13 +61,17 @@ function initPklLocationMap() {
         }
         status.textContent = 'Mencari lokasi...';
         searchTimer = setTimeout(function() {
-            geocoder.geocode({address: address}, function(results, resultStatus) {
+            geocoder.geocode({address: address, region: 'ID'}, function(results, resultStatus) {
                 if (resultStatus === 'OK' && results[0]) {
                     var location = results[0].geometry.location;
                     map.setCenter(location);
                     map.setZoom(16);
                     setLocation(location);
                     status.textContent = 'Lokasi ditemukan. Pastikan titik penanda sudah tepat.';
+                } else if (resultStatus === 'REQUEST_DENIED') {
+                    status.textContent = 'Pencarian alamat ditolak Google. Aktifkan Geocoding API pada API key aplikasi.';
+                } else if (resultStatus === 'OVER_QUERY_LIMIT') {
+                    status.textContent = 'Kuota pencarian Google Maps telah habis. Periksa billing dan kuota API key.';
                 } else {
                     status.textContent = 'Lokasi belum ditemukan. Lanjutkan mengetik atau pilih saran Google Maps.';
                 }
