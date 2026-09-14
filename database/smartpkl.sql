@@ -262,6 +262,9 @@ CREATE TABLE `tbl_siswa` (
   `mulai_pkl` date DEFAULT NULL,
   `akhir_pkl` date DEFAULT NULL,
   `jam_masuk` time DEFAULT '08:00:00',
+  `pkl_latitude` decimal(10,7) DEFAULT NULL,
+  `pkl_longitude` decimal(10,7) DEFAULT NULL,
+  `pkl_radius_meter` int NOT NULL DEFAULT '100',
   `alamat` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `no_telp` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `foto` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL

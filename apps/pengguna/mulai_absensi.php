@@ -3,6 +3,11 @@ session_start();
 if (isset($_POST['submit'])) {
     include '../../config/database.php';
 
+    if (empty($_SESSION['id_siswa']) || strtolower($_SESSION['level'] ?? '') !== 'siswa') {
+        http_response_code(403);
+        exit('Akses tidak diizinkan');
+    }
+
     function input($data)
     {
         return htmlspecialchars(stripslashes(trim($data)));
@@ -17,24 +22,41 @@ if (isset($_POST['submit'])) {
     $tanggal   = date("Y-m-d");
     $waktu     = date("H:i:s");
     $alasan    = isset($_POST["alasan"]) ? input($_POST["alasan"]) : "";
+    $is_ajax   = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest';
 
     if ($_SERVER["REQUEST_METHOD"] == "POST") {
         mysqli_query($kon, "START TRANSACTION");
 
         // Batas waktu PKL mengikuti jadwal masuk masing-masing siswa.
         $siswa_query = mysqli_query($kon, "
-            SELECT COALESCE(jam_masuk, '08:00:00') AS jam_masuk
+            SELECT COALESCE(jam_masuk, '08:00:00') AS jam_masuk, pkl_latitude, pkl_longitude,
+                   COALESCE(pkl_radius_meter, 100) AS pkl_radius_meter
             FROM tbl_siswa
             WHERE id_siswa = '$id_siswa'
             LIMIT 1
         ");
         $siswa = mysqli_fetch_assoc($siswa_query);
+        if (!$siswa || !is_numeric($latitude) || !is_numeric($longitude) || (float) $latitude < -90 || (float) $latitude > 90 || (float) $longitude < -180 || (float) $longitude > 180 || $siswa['pkl_latitude'] === null || $siswa['pkl_longitude'] === null) {
+            mysqli_query($kon, 'ROLLBACK');
+            $response = ['status' => 'error', 'code' => 'lokasi_tidak_valid', 'message' => 'Lokasi GPS atau titik lokasi PKL belum tersedia.'];
+            if ($is_ajax) { header('Content-Type: application/json'); echo json_encode($response); } else { header('Location:../../index.php?page=absen&mulai=lokasi_tidak_valid'); }
+            exit;
+        }
+        $earth_radius = 6371000;
+        $lat1 = deg2rad((float) $latitude); $lng1 = deg2rad((float) $longitude);
+        $lat2 = deg2rad((float) $siswa['pkl_latitude']); $lng2 = deg2rad((float) $siswa['pkl_longitude']);
+        $a = sin(($lat2 - $lat1) / 2) ** 2 + cos($lat1) * cos($lat2) * sin(($lng2 - $lng1) / 2) ** 2;
+        $distance_meter = $earth_radius * 2 * atan2(sqrt($a), sqrt(1 - $a));
+        if ($distance_meter > (int) $siswa['pkl_radius_meter']) {
+            mysqli_query($kon, 'ROLLBACK');
+            $response = ['status' => 'error', 'code' => 'di_luar_lokasi', 'message' => 'Absensi ditolak. Anda berjarak ' . round($distance_meter) . ' meter dari lokasi PKL; batasnya ' . (int) $siswa['pkl_radius_meter'] . ' meter.'];
+            if ($is_ajax) { header('Content-Type: application/json'); echo json_encode($response); } else { header('Location:../../index.php?page=absen&mulai=di_luar_lokasi'); }
+            exit;
+        }
         $jam_masuk_siswa = $siswa['jam_masuk'] ?? '08:00:00';
 
         // Upload foto absensi (support normal file upload or blob sent via AJAX)
         $foto_baru = null;
-        $is_ajax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest';
-
         // Validasi waktu sebelum file dipindahkan agar percobaan terlambat
         // tidak meninggalkan file foto yang tidak terpakai.
         $cek_waktu = "
@@ -420,8 +442,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['submit'])) {
                     }
                 });
             }).then(function(json) {
-                if (json && json.code === 'terlambat') {
-                    alert('Maaf, Anda telat. Tolong hubungi pihak terkait.');
+                if (json && (json.code === 'terlambat' || json.code === 'di_luar_lokasi' || json.code === 'lokasi_tidak_valid')) {
+                    alert(json.message || 'Absensi ditolak.');
                     $('#modal').modal('hide');
                 } else if (json && json.redirect) {
                     window.location = json.redirect;
