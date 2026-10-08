@@ -29,6 +29,8 @@ if ($username !== $username_db) {
 }
 
 $current = $_GET['page'] ?? 'beranda';
+$today_jakarta = new DateTimeImmutable('now', new DateTimeZone('Asia/Jakarta'));
+$is_friday = $today_jakarta->format('N') === '5';
 $presence_session_id = session_id();
 $presence_stmt = $kon->prepare("INSERT INTO tbl_pengunjung (session_id, kode_pengguna, username, level, halaman, ip_address, last_seen)
     VALUES (?, ?, ?, ?, ?, ?, NOW())
@@ -74,7 +76,7 @@ $allowed_pages = [
 
 // ========================= Guard for siswa location permission =========================
 if (strtolower($_SESSION['level']) === 'siswa' && !in_array($current, ['verify_lokasi', 'lokasi_denied'])) {
-    if (empty($_SESSION['location_allowed'])) {
+    if (empty($_SESSION['location_allowed']) && !$is_friday) {
         header("Location: index.php?page=verify_lokasi");
         exit;
     }
