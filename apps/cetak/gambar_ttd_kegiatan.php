@@ -57,11 +57,12 @@ if (!mysqli_stmt_execute($statement)) {
     http_response_code(500);
     exit('Tanda tangan tidak dapat dimuat.');
 }
-$result = mysqli_stmt_get_result($statement);
-$signature = mysqli_fetch_assoc($result);
+$signature_filename = null;
+mysqli_stmt_bind_result($statement, $signature_filename);
+$signature_found = mysqli_stmt_fetch($statement);
 mysqli_stmt_close($statement);
 
-$filename = basename((string) ($signature['nama_file'] ?? ''));
+$filename = basename((string) ($signature_found ? $signature_filename : ''));
 $path = __DIR__ . '/ttd_kegiatan/' . $filename;
 if ($filename === '' || !is_file($path)) {
     http_response_code(404);

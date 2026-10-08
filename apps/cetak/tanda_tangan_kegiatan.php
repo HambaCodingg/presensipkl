@@ -47,8 +47,16 @@ if (!mysqli_stmt_execute($student_statement)) {
     http_response_code(500);
     exit('Data siswa tidak dapat dimuat.');
 }
-$student_result = mysqli_stmt_get_result($student_statement);
-$student = mysqli_fetch_assoc($student_result);
+$student = null;
+mysqli_stmt_bind_result($student_statement, $student_name, $student_company, $student_nis, $student_advisor);
+if (mysqli_stmt_fetch($student_statement)) {
+    $student = [
+        'nama' => $student_name,
+        'perusahaan' => $student_company,
+        'nis' => $student_nis,
+        'pembimbing' => $student_advisor
+    ];
+}
 mysqli_stmt_close($student_statement);
 if (!$student) {
     http_response_code(404);
@@ -71,8 +79,16 @@ if (!mysqli_stmt_execute($signature_statement)) {
     http_response_code(500);
     exit('Data tanda tangan tidak dapat dimuat.');
 }
-$signature_result = mysqli_stmt_get_result($signature_statement);
-$saved_signature = mysqli_fetch_assoc($signature_result) ?: [];
+$saved_signature = [];
+mysqli_stmt_bind_result($signature_statement, $signature_user_name, $signature_user, $signature_advisor, $signature_student);
+if (mysqli_stmt_fetch($signature_statement)) {
+    $saved_signature = [
+        'nama_user' => $signature_user_name,
+        'ttd_user' => $signature_user,
+        'ttd_pembimbing' => $signature_advisor,
+        'ttd_siswa' => $signature_student
+    ];
+}
 mysqli_stmt_close($signature_statement);
 
 $roles = [

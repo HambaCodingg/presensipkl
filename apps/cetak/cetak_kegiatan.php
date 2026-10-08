@@ -55,8 +55,16 @@ if (!mysqli_stmt_execute($student_statement)) {
     http_response_code(500);
     exit('Data siswa tidak dapat dimuat.');
 }
-$student_result = mysqli_stmt_get_result($student_statement);
-$student = mysqli_fetch_assoc($student_result);
+$student = null;
+mysqli_stmt_bind_result($student_statement, $student_name, $student_nis, $student_company, $student_advisor);
+if (mysqli_stmt_fetch($student_statement)) {
+    $student = [
+        'nama' => $student_name,
+        'nis' => $student_nis,
+        'perusahaan' => $student_company,
+        'pembimbing' => $student_advisor
+    ];
+}
 mysqli_stmt_close($student_statement);
 if (!$student) {
     http_response_code(404);
@@ -79,8 +87,26 @@ if (!mysqli_stmt_execute($signature_statement)) {
     http_response_code(500);
     exit('Data tanda tangan tidak dapat dimuat.');
 }
-$signature_result = mysqli_stmt_get_result($signature_statement);
-$signatures = mysqli_fetch_assoc($signature_result) ?: [];
+$signatures = [];
+mysqli_stmt_bind_result(
+    $signature_statement,
+    $signature_user_name,
+    $signature_user,
+    $signature_advisor_name,
+    $signature_advisor,
+    $signature_student_name,
+    $signature_student
+);
+if (mysqli_stmt_fetch($signature_statement)) {
+    $signatures = [
+        'nama_user' => $signature_user_name,
+        'ttd_user' => $signature_user,
+        'nama_pembimbing' => $signature_advisor_name,
+        'ttd_pembimbing' => $signature_advisor,
+        'nama_siswa' => $signature_student_name,
+        'ttd_siswa' => $signature_student
+    ];
+}
 mysqli_stmt_close($signature_statement);
 
 $activity_statement = mysqli_prepare(
@@ -99,14 +125,15 @@ if (!mysqli_stmt_execute($activity_statement)) {
     http_response_code(500);
     exit('Data kegiatan tidak dapat dimuat.');
 }
-$activity_result = mysqli_stmt_get_result($activity_statement);
-if (!$activity_result) {
-    http_response_code(500);
-    exit('Data kegiatan tidak dapat dimuat.');
-}
-
+$activity_date = $activity_name = $activity_place = null;
+mysqli_stmt_bind_result($activity_statement, $activity_date, $activity_name, $activity_place);
 $activities_by_date = [];
-while ($activity = mysqli_fetch_assoc($activity_result)) {
+while (mysqli_stmt_fetch($activity_statement)) {
+    $activity = [
+        'tanggal' => $activity_date,
+        'kegiatan' => $activity_name,
+        'tempat' => $activity_place
+    ];
     $activities_by_date[$activity['tanggal']][] = $activity;
 }
 mysqli_stmt_close($activity_statement);
