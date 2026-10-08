@@ -148,11 +148,21 @@ if ($_SESSION["level"] != 'Admin' and $_SESSION["level"] != 'admin') {
                                             <?php
                                             $cell = $matrix_row['absensi'][$matrix_date] ?? null;
                                             $status_code = (int) ($cell['status_code'] ?? 0);
-                                            $status_label = $status_code === 1 ? 'Hadir' : ($status_code === 2 ? 'Izin' : '');
-                                            $status_class = $status_code === 1 ? 'matrix-hadir' : 'matrix-izin';
+                                            $status_labels = [
+                                                1 => 'Hadir',
+                                                2 => 'Izin',
+                                                4 => 'Sakit'
+                                            ];
+                                            $status_classes = [
+                                                1 => 'matrix-hadir',
+                                                2 => 'matrix-izin',
+                                                4 => 'matrix-sakit'
+                                            ];
+                                            $status_label = $status_labels[$status_code] ?? '';
+                                            $status_class = $status_classes[$status_code] ?? '';
                                             ?>
                                             <td>
-                                                <?php if ($status_code === 1 || $status_code === 2): ?>
+                                                <?php if ($status_label !== ''): ?>
                                                     <button type="button" class="matrix-status <?php echo $status_class; ?> <?php echo !empty($cell['foto']) ? 'view-attendance-photo' : ''; ?>"
                                                         <?php if (!empty($cell['foto'])): ?>
                                                             data-photo="<?php echo htmlspecialchars('uploads/absensi/' . $cell['foto'], ENT_QUOTES, 'UTF-8'); ?>"
@@ -334,6 +344,11 @@ if ($_SESSION["level"] != 'Admin' and $_SESSION["level"] != 'admin') {
     .matrix-alfa {
         color: #991b1b;
         background: #fee2e2;
+    }
+
+    .matrix-sakit {
+        color: #92400e;
+        background: #fef3c7;
     }
 </style>
 

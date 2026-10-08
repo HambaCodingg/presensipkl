@@ -64,22 +64,25 @@ if (isset($_POST['submit_absensi'])) {
         $simpan_absensi = mysqli_query($kon, $sql);
 
         // --- SIMPAN ALASAN ---
-        if (empty($id_alasan)) {
+        if ((int) $status === 2 && empty($id_alasan)) {
             $sql = "INSERT INTO tbl_alasan (id_siswa, alasan, tanggal) 
                     VALUES ('$id_siswa', '$alasan', '$tanggal')";
-        } else {
+            $simpan_izin = mysqli_query($kon, $sql);
+        } elseif ((int) $status === 2) {
             $sql = "UPDATE tbl_alasan SET
                         id_siswa = '$id_siswa', 
                         alasan   = '$alasan', 
                         tanggal  = '$tanggal' 
                     WHERE id_alasan = '$id_alasan'";
+            $simpan_izin = mysqli_query($kon, $sql);
+        } elseif (!empty($id_alasan)) {
+            $sql = "DELETE FROM tbl_alasan WHERE id_alasan = '$id_alasan'";
+            $simpan_izin = mysqli_query($kon, $sql);
+        } else {
+            $simpan_izin = true;
         }
-        $simpan_izin = mysqli_query($kon, $sql);
 
         if ($simpan_absensi && $simpan_izin) {
-            mysqli_query($kon, "COMMIT");
-            header("Location:../../index.php?page=data_absensi&mulai=berhasil");
-        } else if ($simpan_absensi) {
             mysqli_query($kon, "COMMIT");
             header("Location:../../index.php?page=data_absensi&mulai=berhasil");
         } else {
@@ -185,6 +188,7 @@ if (!empty($id_siswa) && !empty($tanggal)) {
                     <option value="1" <?php if ($status == 1) echo 'selected'; ?>>Hadir</option>
                     <option value="2" <?php if ($status == 2) echo 'selected'; ?>>Izin</option>
                     <option value="3" <?php if ($status == 3) echo 'selected'; ?>>Tidak Hadir</option>
+                    <option value="4" <?php if ($status == 4) echo 'selected'; ?>>Sakit</option>
                 </select>
             </div>
         </div>

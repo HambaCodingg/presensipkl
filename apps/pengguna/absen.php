@@ -136,6 +136,8 @@ $akhir_absen = $setting['akhir_absen'];
                                                 echo "Izin";
                                             } elseif ($data['status'] == 3) {
                                                 echo "Tidak hadir";
+                                            } elseif ($data['status'] == 4) {
+                                                echo "Sakit";
                                             }
                                         } else {
                                             echo "Belum Absensi";

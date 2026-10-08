@@ -257,6 +257,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['submit'])) {
                         <option value="1">Hadir</option>
                         <option value="2">Izin</option>
                         <option value="3">Tidak Hadir</option>
+                        <option value="4">Sakit</option>
                     </select>
                     <span id="status-display" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none;color:#000;">Pilih</span>
                 </div>

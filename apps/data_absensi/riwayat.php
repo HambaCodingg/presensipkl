@@ -89,6 +89,7 @@
                                             WHEN tbl_absensi.status = 1 THEN 'Hadir'
                                             WHEN tbl_absensi.status = 2 THEN 'Izin'
                                             WHEN tbl_absensi.status = 3 THEN 'Tidak Hadir'
+                                            WHEN tbl_absensi.status = 4 THEN 'Sakit'
                                             ELSE 'Belum Absensi'
                                         END) AS status
                                     FROM tbl_absensi
@@ -115,6 +116,7 @@
                                             WHEN tbl_absensi.status = 1 THEN 'Hadir'
                                             WHEN tbl_absensi.status = 2 THEN 'Izin'
                                             WHEN tbl_absensi.status = 3 THEN 'Tidak Hadir'
+                                            WHEN tbl_absensi.status = 4 THEN 'Sakit'
                                             ELSE 'Belum Absensi'
                                         END) AS status
                                     FROM tbl_absensi

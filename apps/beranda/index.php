@@ -60,6 +60,7 @@ $statistik_query = mysqli_query($kon, "
         COALESCE(SUM(CASE WHEN a.status = 1 THEN 1 ELSE 0 END), 0) AS hadir,
         COALESCE(SUM(CASE WHEN a.status = 2 THEN 1 ELSE 0 END), 0) AS izin,
         COALESCE(SUM(CASE WHEN a.status = 3 THEN 1 ELSE 0 END), 0) AS tidak_hadir,
+        COALESCE(SUM(CASE WHEN a.status = 4 THEN 1 ELSE 0 END), 0) AS sakit,
         COALESCE(SUM(CASE WHEN a.id_absensi IS NULL THEN 1 ELSE 0 END), 0) AS belum_absen,
         COALESCE(SUM(CASE WHEN a.status = 1 AND TIME(a.waktu) <= COALESCE(s.jam_masuk, '08:00:00') THEN 1 ELSE 0 END), 0) AS tepat_waktu,
         COALESCE(SUM(CASE WHEN a.status = 1 AND TIME(a.waktu) > COALESCE(s.jam_masuk, '08:00:00') THEN 1 ELSE 0 END), 0) AS terlambat
@@ -75,6 +76,7 @@ $statistik = mysqli_fetch_assoc($statistik_query) ?: [
     'hadir' => 0,
     'izin' => 0,
     'tidak_hadir' => 0,
+    'sakit' => 0,
     'belum_absen' => 0,
     'tepat_waktu' => 0,
     'terlambat' => 0
@@ -343,6 +345,13 @@ usort($podium_bulanan, function ($a, $b) {
                                     <span class="stat-icon"><i class="fa fa-times"></i></span>
                                     <span class="stat-label">Tidak Hadir</span>
                                     <strong><?php echo (int) $statistik['tidak_hadir']; ?></strong>
+                                </div>
+                            </div>
+                            <div class="col-sm-6 col-md-3">
+                                <div class="stat-card stat-sick">
+                                    <span class="stat-icon"><i class="fa fa-medkit"></i></span>
+                                    <span class="stat-label">Sakit</span>
+                                    <strong><?php echo (int) $statistik['sakit']; ?></strong>
                                 </div>
                             </div>
                             <div class="col-sm-6 col-md-3">
@@ -775,6 +784,7 @@ usort($podium_bulanan, function ($a, $b) {
                     .stat-permission { background: #d97706; }
                     .stat-pending { background: #64748b; }
                     .stat-absent { background: #dc2626; }
+                    .stat-sick { background: #7c3aed; }
                     .stat-on-time { background: #0f766e; }
                     .stat-late { background: #b45309; }
 

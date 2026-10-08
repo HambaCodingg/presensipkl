@@ -85,6 +85,7 @@ function AbsensiOtomatis($sql)
             WHEN tbl_absensi.status IS NULL THEN 'Belum Absensi'
             WHEN tbl_absensi.status = 1 THEN 'Hadir'
             WHEN tbl_absensi.status = 2 THEN 'Izin'
+            WHEN tbl_absensi.status = 4 THEN 'Sakit'
         ELSE 'Tidak Hadir' END) AS status, 
         (CASE
             WHEN tbl_absensi.waktu IS NULL THEN 'Belum'
@@ -117,6 +118,7 @@ function PencarianAbsensi($nama, $tanggal_awal, $tanggal_akhir)
             WHEN 1 THEN 'Hadir'
             WHEN 2 THEN 'Izin'
             WHEN 3 THEN 'Tidak Hadir'
+            WHEN 4 THEN 'Sakit'
             ELSE 'Belum Absensi'
         END AS status,
         DATE_FORMAT(a.tanggal, '%W') AS hari,
@@ -458,6 +460,9 @@ function StatusAbsensi($status)
             break;
         case 3:
             $status = "Tidak Hadir";
+            break;
+        case 4:
+            $status = "Sakit";
             break;
     }
     return $status;
