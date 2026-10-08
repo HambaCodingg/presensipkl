@@ -9,29 +9,6 @@ if (!in_array($level, ['admin', 'siswa'], true)) {
     exit('Akses tidak diizinkan.');
 }
 
-$show_debug_error = isset($_GET['debug']) && $_GET['debug'] === '1';
-$diagnostic_stage = 'memulai halaman';
-register_shutdown_function(static function () use (&$diagnostic_stage, $show_debug_error) {
-    if (!$show_debug_error) {
-        return;
-    }
-
-    $error = error_get_last();
-    $fatal_types = [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR];
-    if (!$error || !in_array($error['type'], $fatal_types, true)) {
-        return;
-    }
-
-    if (!headers_sent()) {
-        http_response_code(500);
-        header('Content-Type: text/plain; charset=UTF-8');
-    }
-    echo "\nDiagnostik halaman tanda tangan\n";
-    echo 'Tahap: ' . $diagnostic_stage . "\n";
-    echo 'Fatal PHP: ' . $error['message'] . "\n";
-    echo 'Lokasi: ' . basename($error['file']) . ':' . $error['line'] . "\n";
-});
-
 $id_siswa = filter_input(INPUT_GET, 'id_siswa', FILTER_VALIDATE_INT);
 $tanggal_awal = $_GET['tanggal_awal'] ?? '';
 $tanggal_akhir = $_GET['tanggal_akhir'] ?? '';
@@ -55,10 +32,9 @@ if (
     exit('Siswa dan rentang tanggal yang valid harus dipilih.');
 }
 
-$diagnostic_stage = 'memuat koneksi database';
 include '../../config/database.php';
+include '../../config/function.php';
 
-$diagnostic_stage = 'menyiapkan query data siswa';
 $student_statement = mysqli_prepare(
     $kon,
     'SELECT nama, perusahaan, nis, pembimbing FROM tbl_siswa WHERE id_siswa = ? LIMIT 1'
@@ -88,7 +64,6 @@ if (!$student) {
     exit('Data siswa tidak ditemukan.');
 }
 
-$diagnostic_stage = 'menyiapkan query tanda tangan';
 $signature_statement = mysqli_prepare(
     $kon,
     'SELECT nama_user, ttd_user, ttd_pembimbing, ttd_siswa
@@ -117,7 +92,6 @@ if (mysqli_stmt_fetch($signature_statement)) {
 }
 mysqli_stmt_close($signature_statement);
 
-$diagnostic_stage = 'menyiapkan data tanda tangan dan token formulir';
 $roles = [
     'user' => ['label' => 'User DU/DI', 'name' => trim((string) ($saved_signature['nama_user'] ?? ''))],
     'pembimbing' => ['label' => 'Pembimbing PKL', 'name' => trim((string) ($student['pembimbing'] ?? ''))],
@@ -140,7 +114,6 @@ $signature_directory = __DIR__ . '/ttd_kegiatan/';
 $signature_limit = 2 * 1024 * 1024;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $diagnostic_stage = 'memvalidasi formulir tanda tangan';
     if (!hash_equals($csrf_token, (string) ($_POST['csrf_token'] ?? ''))) {
         http_response_code(400);
         exit('Permintaan tidak valid. Muat ulang halaman lalu coba kembali.');
@@ -238,7 +211,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($error_message === '') {
-        $diagnostic_stage = 'menyimpan data tanda tangan ke database';
         $save_statement = mysqli_prepare(
             $kon,
             'INSERT INTO tbl_laporan_kegiatan_ttd
@@ -305,7 +277,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$diagnostic_stage = 'menyiapkan tampilan formulir tanda tangan';
 $month_name = static function ($month) {
     return MendapatkanBulan((int) $month);
 };
