@@ -88,6 +88,7 @@ $tanggal_keluar = strftime("%d %B %Y", strtotime($akhir_pkl));
                                 <th class="text-center">Tanggal</th>
                                 <th class="text-center">Jam</th>
                                 <th class="text-center">Kegiatan</th>
+                                <th class="text-center">Tempat</th>
                             </tr>
                         </thead>
 
@@ -137,6 +138,7 @@ $tanggal_keluar = strftime("%d %B %Y", strtotime($akhir_pkl));
                                         echo BarisKegiatan($string_kegiatan);
                                         ?>
                                     </td>
+                                    <td class="text-center"><?php echo htmlspecialchars($data['tempat'] ?? '-', ENT_QUOTES, 'UTF-8'); ?></td>
                                 </tr>
                                 <!-- bagian akhir (penutup) while -->
                             <?php endwhile; ?>

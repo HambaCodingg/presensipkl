@@ -5,7 +5,7 @@ if (session_status() === PHP_SESSION_NONE) {
 $id_siswa = $_POST['id_siswa'] ?? '';
 ?>
 
-<form id="cetak-kegiatan-form" action="apps/cetak/cetak_kegiatan.php" method="GET" target="_blank">
+<form id="cetak-kegiatan-form" action="apps/cetak/tanda_tangan_kegiatan.php" method="GET" target="_blank">
     <div class="row">
         <div class="col-sm-6">
             <div class="form-group">

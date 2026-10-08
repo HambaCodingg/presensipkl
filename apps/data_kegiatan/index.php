@@ -101,6 +101,7 @@ if ($_SESSION["level"] != 'Admin' and $_SESSION["level"] != 'admin') {
                                 <th>Tanggal</th>
                                 <th>Jam</th>
                                 <th>Kegiatan</th>
+                                <th>Tempat</th>
                                 <th>Aksi</th>
                             </tr>
                         </thead>
@@ -143,6 +144,7 @@ if ($_SESSION["level"] != 'Admin' and $_SESSION["level"] != 'admin') {
                                     </td>
                                     <td><?php echo $data['waktu']; ?></td>
                                     <td><?php echo $data['kegiatan']; ?></td>
+                                    <td><?php echo htmlspecialchars($data['tempat'] ?? '-', ENT_QUOTES, 'UTF-8'); ?></td>
                                     <td>
                                         <button id_siswa="<?php echo $data['id_siswa']; ?>" id_kegiatan="<?php echo $data['id_kegiatan']; ?>" class="ubah_kegiatan cetak btn btn-warning"><i class="fa fa-edit"></i></button>
                                         <a href="apps/data_kegiatan/hapus.php?id_kegiatan=<?php echo $data['id_kegiatan']; ?>" class="btn-hapus-kegiatan btn btn-danger btn-circle"><i class="fa fa-trash"></i></a>

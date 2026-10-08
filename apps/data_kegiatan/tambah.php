@@ -21,11 +21,12 @@ if (isset($_POST['simpan_kegiatan'])) {
     $waktu_awal = $_POST["waktu_awal"];
     $waktu_akhir = $_POST["waktu_akhir"];
     $kegiatan = $_POST["kegiatan"];
+    $tempat = mysqli_real_escape_string($kon, trim($_POST["tempat"]));
 
     if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
-        $sql = "INSERT INTO tbl_kegiatan (id_siswa,kegiatan,waktu_awal,waktu_akhir,tanggal)
-        VALUES ('$id_siswa','$kegiatan','$waktu_awal','$waktu_akhir','$tanggal')";
+        $sql = "INSERT INTO tbl_kegiatan (id_siswa,kegiatan,tempat,waktu_awal,waktu_akhir,tanggal)
+        VALUES ('$id_siswa','$kegiatan','$tempat','$waktu_awal','$waktu_akhir','$tanggal')";
         $simpan_kegiatan = mysqli_query($kon, $sql);
 
         // validasi data
@@ -80,6 +81,12 @@ if (isset($_POST['simpan_kegiatan'])) {
             <div class="form-group">
                 <label>Kegiatan :</label>
                 <input type="text" name="kegiatan" id="kegiatan" class="form-control" value="" placeholder="Masukkan Kegiatan Harian">
+            </div>
+        </div>
+        <div class="col-sm-12">
+            <div class="form-group">
+                <label>Tempat :</label>
+                <input type="text" name="tempat" id="tempat" class="form-control" value="" placeholder="Masukkan tempat kegiatan" required>
             </div>
         </div>
     </div>

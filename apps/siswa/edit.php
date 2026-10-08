@@ -27,6 +27,7 @@ if (isset($_POST['edit_siswa'])) {
         $nama = input($_POST["nama"]);
         $perusahaan = input($_POST["perusahaan"]);
         $jurusan = input($_POST["jurusan"]);
+        $pembimbing = mysqli_real_escape_string($kon, trim($_POST["pembimbing"] ?? ''));
         $nis = input($_POST["nis"]);
         $mulai_pkl = input($_POST["mulai_pkl"]);
         $akhir_pkl = input($_POST["akhir_pkl"]);
@@ -87,6 +88,7 @@ if (isset($_POST['edit_siswa'])) {
                         nama='$nama',
                         perusahaan='$perusahaan',
                         jurusan='$jurusan',
+                        pembimbing='$pembimbing',
                         nis='$nis',
                         mulai_pkl='$mulai_pkl',
                         akhir_pkl='$akhir_pkl',
@@ -109,6 +111,7 @@ if (isset($_POST['edit_siswa'])) {
                     nama='$nama',
                     perusahaan='$perusahaan',
                     jurusan='$jurusan',
+                    pembimbing='$pembimbing',
                     nis='$nis',
                     mulai_pkl='$mulai_pkl',
                     akhir_pkl='$akhir_pkl',
@@ -175,6 +178,12 @@ $data = mysqli_fetch_array($hasil);
             <div class="form-group">
                 <label>Jurusan :</label>
                 <input type="text" name="jurusan" class="form-control" value="<?php echo $data['jurusan']; ?>" placeholder="Masukan Nama Jurusan" required>
+            </div>
+        </div>
+        <div class="col-sm-6">
+            <div class="form-group">
+                <label>Pembimbing PKL :</label>
+                <input type="text" name="pembimbing" class="form-control" value="<?php echo htmlspecialchars($data['pembimbing'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" placeholder="Masukkan nama pembimbing PKL" required>
             </div>
         </div>
         <div class="col-sm-6">

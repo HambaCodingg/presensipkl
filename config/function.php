@@ -247,7 +247,7 @@ function DataKegiatan($sql)
 {
     include 'database.php';
     $sql = "SELECT tbl_siswa.id_siswa, tbl_siswa.nama, 
-    tbl_siswa.perusahaan, tbl_kegiatan.id_kegiatan, 
+    tbl_siswa.perusahaan, tbl_kegiatan.tempat, tbl_kegiatan.id_kegiatan,
     tbl_kegiatan.kegiatan, tbl_kegiatan.tanggal,
     DATE_FORMAT(tbl_kegiatan.tanggal, '%W') AS hari, 
     CONCAT(SUBSTRING(tbl_kegiatan.waktu_awal, 1, 5), ' - ', SUBSTRING(tbl_kegiatan.waktu_akhir, 1, 5)) AS waktu
@@ -263,7 +263,7 @@ function CariKegiatan($nama, $tanggal_awal, $tanggal_akhir)
 {
     include 'database.php';
     $sql = "SELECT tbl_siswa.id_siswa, tbl_siswa.nama, 
-    tbl_siswa.perusahaan, tbl_kegiatan.id_kegiatan, 
+    tbl_siswa.perusahaan, tbl_kegiatan.tempat, tbl_kegiatan.id_kegiatan,
     tbl_kegiatan.kegiatan, tbl_kegiatan.tanggal,
     DATE_FORMAT(tbl_kegiatan.tanggal, '%W') AS hari, 
     CONCAT(SUBSTRING(tbl_kegiatan.waktu_awal, 1, 5), ' - ', SUBSTRING(tbl_kegiatan.waktu_akhir, 1, 5)) AS waktu
@@ -285,7 +285,8 @@ function MenampilkanKegiatan($id_siswa)
     DAYNAME(tbl_kegiatan.tanggal) AS hari, 
     GROUP_CONCAT(CONCAT(tbl_kegiatan.kegiatan, 
     ' (', tbl_kegiatan.waktu_awal, ' - ', tbl_kegiatan.waktu_akhir, ')') 
-    SEPARATOR ', ') AS kegiatan 
+    SEPARATOR ', ') AS kegiatan,
+    GROUP_CONCAT(DISTINCT tbl_kegiatan.tempat ORDER BY tbl_kegiatan.tempat SEPARATOR ', ') AS tempat
     FROM tbl_kegiatan WHERE tbl_kegiatan.id_siswa = '$id_siswa' 
     GROUP BY tbl_kegiatan.tanggal, tbl_kegiatan.id_siswa 
     ORDER BY tbl_kegiatan.tanggal DESC";
@@ -302,7 +303,8 @@ function MencarikanKegiatan($id_siswa, $tanggal_awal, $tanggal_akhir)
     DAYNAME(tbl_kegiatan.tanggal) AS hari, 
     GROUP_CONCAT(CONCAT(tbl_kegiatan.kegiatan, 
     ' (', tbl_kegiatan.waktu_awal, ' - ', tbl_kegiatan.waktu_akhir, ')') 
-    SEPARATOR ', ') AS kegiatan 
+    SEPARATOR ', ') AS kegiatan,
+    GROUP_CONCAT(DISTINCT tbl_kegiatan.tempat ORDER BY tbl_kegiatan.tempat SEPARATOR ', ') AS tempat
     FROM tbl_kegiatan WHERE tbl_kegiatan.id_siswa = '$id_siswa'
     AND tbl_kegiatan.tanggal BETWEEN '$tanggal_awal' AND '$tanggal_akhir' 
     GROUP BY tbl_kegiatan.tanggal, tbl_kegiatan.id_siswa 

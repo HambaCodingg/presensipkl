@@ -26,6 +26,10 @@ $data = mysqli_fetch_array($hasil);
             <td width="75%">: <?php echo $data['jurusan']; ?></td>
         </tr>
         <tr>
+            <td>Pembimbing PKL</td>
+            <td width="75%">: <?php echo htmlspecialchars($data['pembimbing'] ?? '', ENT_QUOTES, 'UTF-8'); ?></td>
+        </tr>
+        <tr>
             <td>Mulai PKL</td>
             <td width="75%">: <?php $tgl = date("d", strtotime($data['mulai_pkl']));
                                 $bulan = date("m", strtotime($data['mulai_pkl']));

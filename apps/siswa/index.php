@@ -109,6 +109,7 @@ if ($_SESSION["level"] != 'Admin' and $_SESSION["level"] != 'admin') {
                                 <th>No</th>
                                 <th>Nama</th>
                                 <th>Perusahaan</th>
+                                <th>Pembimbing PKL</th>
                                 <th>NIS</th>
                                 <th>Mulai PKL</th>
                                 <th>Akhir PKL</th>
@@ -137,6 +138,7 @@ if ($_SESSION["level"] != 'Admin' and $_SESSION["level"] != 'admin') {
                                     <td></td> <!-- nomor urut by JS -->
                                     <td><?= htmlspecialchars($data['nama']); ?></td>
                                     <td><?= htmlspecialchars($data['perusahaan']); ?></td>
+                                    <td><?= htmlspecialchars($data['pembimbing'] ?? ''); ?></td>
                                     <td><?= htmlspecialchars($data['nis']); ?></td>
                                     <td><?= date('d-m-Y', strtotime($data["mulai_pkl"])); ?></td>
                                     <td><?= date('d-m-Y', strtotime($data["akhir_pkl"])); ?></td>

@@ -36,6 +36,7 @@ if (isset($_POST['tambah_siswa'])) {
         $nama        = input($_POST["nama"]);
         $perusahaan  = input($_POST["perusahaan"]);
         $jurusan     = input($_POST["jurusan"]);
+        $pembimbing  = mysqli_real_escape_string($kon, trim($_POST["pembimbing"] ?? ''));
         $nis         = input($_POST["nis"]);
         $mulai_pkl   = input($_POST["mulai_pkl"]);
         $akhir_pkl   = input($_POST["akhir_pkl"]);
@@ -116,8 +117,8 @@ if (isset($_POST['tambah_siswa'])) {
         $simpan_pengguna = mysqli_query($kon, $sql_user) or die("Error USER: " . mysqli_error($kon));
 
         // ================== Insert ke tbl_siswa ==================
-        $sql_siswa = "INSERT INTO tbl_siswa (kode_siswa, nama, perusahaan, jurusan, nis, mulai_pkl, akhir_pkl, jam_masuk, pkl_latitude, pkl_longitude, pkl_radius_meter, alamat, no_telp, foto)
-                  VALUES ('$kode_pengguna','$nama','$perusahaan','$jurusan','$nis','$mulai_pkl','$akhir_pkl','$jam_masuk','$pkl_latitude','$pkl_longitude','$pkl_radius_meter','$alamat','$no_telp','$foto')";
+        $sql_siswa = "INSERT INTO tbl_siswa (kode_siswa, nama, perusahaan, jurusan, pembimbing, nis, mulai_pkl, akhir_pkl, jam_masuk, pkl_latitude, pkl_longitude, pkl_radius_meter, alamat, no_telp, foto)
+                  VALUES ('$kode_pengguna','$nama','$perusahaan','$jurusan','$pembimbing','$nis','$mulai_pkl','$akhir_pkl','$jam_masuk','$pkl_latitude','$pkl_longitude','$pkl_radius_meter','$alamat','$no_telp','$foto')";
         $simpan_siswa = mysqli_query($kon, $sql_siswa) or die("Error SISWA: " . mysqli_error($kon));
 
         // ================== Commit / Rollback ==================
@@ -152,6 +153,12 @@ if (isset($_POST['tambah_siswa'])) {
             <div class="form-group">
                 <label>Jurusan :</label>
                 <input type="text" name="jurusan" class="form-control" placeholder="Masukan Nama Jurusan" required>
+            </div>
+        </div>
+        <div class="col-sm-6">
+            <div class="form-group">
+                <label>Pembimbing PKL :</label>
+                <input type="text" name="pembimbing" class="form-control" placeholder="Masukkan nama pembimbing PKL" required>
             </div>
         </div>
         <div class="col-sm-6">

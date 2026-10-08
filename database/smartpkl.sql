@@ -140,12 +140,12 @@ CREATE TABLE `tbl_kegiatan` (
   `id_kegiatan` int NOT NULL,
   `id_siswa` int DEFAULT NULL,
   `kegiatan` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `tempat` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `waktu_awal` time DEFAULT NULL,
   `waktu_akhir` time DEFAULT NULL,
   `tanggal` date DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
 -- Struktur dari tabel `tbl_zoom`
 --
 
@@ -258,6 +258,7 @@ CREATE TABLE `tbl_siswa` (
   `nama` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `perusahaan` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `jurusan` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `pembimbing` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `nis` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `mulai_pkl` date DEFAULT NULL,
   `akhir_pkl` date DEFAULT NULL,
@@ -268,6 +269,29 @@ CREATE TABLE `tbl_siswa` (
   `alamat` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `no_telp` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `foto` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Struktur dari tabel `tbl_laporan_kegiatan_ttd`
+--
+
+CREATE TABLE `tbl_laporan_kegiatan_ttd` (
+  `id_laporan` int NOT NULL,
+  `id_siswa` int NOT NULL,
+  `tanggal_awal` date NOT NULL,
+  `tanggal_akhir` date NOT NULL,
+  `nama_user` varchar(255) COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
+  `ttd_user` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `nama_pembimbing` varchar(255) COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
+  `ttd_pembimbing` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `nama_siswa` varchar(255) COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
+  `ttd_siswa` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `updated_by` int DEFAULT NULL,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id_laporan`),
+  UNIQUE KEY `uq_laporan_kegiatan_periode` (`id_siswa`, `tanggal_awal`, `tanggal_akhir`),
+  KEY `idx_laporan_kegiatan_siswa` (`id_siswa`),
+  CONSTRAINT `tbl_laporan_kegiatan_ttd_ibfk_1` FOREIGN KEY (`id_siswa`) REFERENCES `tbl_siswa` (`id_siswa`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -472,6 +496,12 @@ ALTER TABLE `tbl_alasan_asrama`
 --
 ALTER TABLE `tbl_kegiatan`
   MODIFY `id_kegiatan` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=174;
+
+--
+-- AUTO_INCREMENT untuk tabel `tbl_laporan_kegiatan_ttd`
+--
+ALTER TABLE `tbl_laporan_kegiatan_ttd`
+  MODIFY `id_laporan` int NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT untuk tabel `tbl_zoom`

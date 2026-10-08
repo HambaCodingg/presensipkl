@@ -21,11 +21,13 @@ if (isset($_POST['edit_kegiatan'])) {
     $waktu_awal = $_POST["waktu_awal"];
     $waktu_akhir = $_POST["waktu_akhir"];
     $kegiatan = $_POST["kegiatan"];
+    $tempat = mysqli_real_escape_string($kon, trim($_POST["tempat"]));
 
     if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         $sql = "UPDATE tbl_kegiatan SET
         kegiatan = '$kegiatan', 
+        tempat = '$tempat',
         waktu_awal = '$waktu_awal',
         waktu_akhir = '$waktu_akhir', 
         tanggal = '$tanggal'
@@ -52,7 +54,7 @@ $id_kegiatan = $_POST['id_kegiatan'];
 include '../../config/database.php';
 
 //Seleksi data berdasarkan id_absensi dari AJAX untuk menampilkan ke form absensi
-$query = "SELECT id_kegiatan, kegiatan, waktu_awal, waktu_akhir, tanggal
+$query = "SELECT id_kegiatan, kegiatan, tempat, waktu_awal, waktu_akhir, tanggal
         FROM tbl_kegiatan WHERE id_kegiatan = '$id_kegiatan';";
 $result = $kon->query($query);
 $row = $result->fetch_assoc();
@@ -60,6 +62,7 @@ $waktu_awal = $row['waktu_awal'];
 $waktu_akhir = $row['waktu_akhir'];
 $tanggal = $row['tanggal'];
 $kegiatan = $row['kegiatan'];
+$tempat = $row['tempat'] ?? '';
 ?>
 
 <form action="apps/data_kegiatan/edit.php" method="post" enctype="multipart/form-data">
@@ -88,6 +91,12 @@ $kegiatan = $row['kegiatan'];
             <div class="form-group">
                 <label>Kegiatan :</label>
                 <input type="text" name="kegiatan" id="kegiatan" class="form-control" value="<?php echo $kegiatan; ?>" placeholder="Masukkan Kegiatan Harian">
+            </div>
+        </div>
+        <div class="col-sm-12">
+            <div class="form-group">
+                <label>Tempat :</label>
+                <input type="text" name="tempat" id="tempat" class="form-control" value="<?php echo htmlspecialchars($tempat, ENT_QUOTES, 'UTF-8'); ?>" placeholder="Masukkan tempat kegiatan" required>
             </div>
         </div>
     </div>
