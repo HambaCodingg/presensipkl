@@ -24,6 +24,43 @@ echo "mysqli: " . (extension_loaded('mysqli') ? 'tersedia' : 'TIDAK TERSEDIA') .
 echo "mysqli_stmt_bind_result: " . (function_exists('mysqli_stmt_bind_result') ? 'tersedia' : 'TIDAK TERSEDIA') . "\n";
 echo "iconv: " . (function_exists('iconv') ? 'tersedia' : 'TIDAK TERSEDIA') . "\n\n";
 
+ob_start();
+require_once '../../config/function.php';
+$helper_output = ob_get_clean();
+if (!function_exists('MendapatkanBulan')) {
+    echo "GAGAL memuat config/function.php atau fungsi MendapatkanBulan tidak tersedia.\n";
+} else {
+    $month = (int) date('n');
+    echo "OK helper bulan: " . MendapatkanBulan($month) . "\n";
+}
+if (trim($helper_output) !== '') {
+    echo "PERINGATAN: config/function.php mengeluarkan output saat dimuat.\n";
+}
+
+$fpdf_path = '../../source/plugin/fpdf/fpdf.php';
+if (!is_readable($fpdf_path)) {
+    echo "GAGAL: pustaka FPDF tidak dapat dibaca pada {$fpdf_path}\n";
+} else {
+    require_once $fpdf_path;
+    if (!class_exists('FPDF')) {
+        echo "GAGAL: kelas FPDF tidak tersedia setelah pustaka dimuat.\n";
+    } else {
+        try {
+            $test_pdf = new FPDF('P', 'mm', 'A4');
+            $test_pdf->AddPage();
+            $test_pdf->SetFont('Arial', '', 10);
+            $test_pdf->Cell(40, 8, 'Tes diagnostik');
+            $pdf_bytes = $test_pdf->Output('S');
+            echo (is_string($pdf_bytes) && strpos($pdf_bytes, '%PDF-') === 0)
+                ? "OK generasi PDF\n"
+                : "GAGAL generasi PDF: output tidak valid\n";
+        } catch (Throwable $error) {
+            echo "GAGAL generasi PDF: " . get_class($error) . ': ' . $error->getMessage() . "\n";
+        }
+    }
+}
+echo "\n";
+
 require_once '../../config/database.php';
 if (!isset($kon) || !$kon) {
     echo "GAGAL: koneksi database tidak tersedia.\n";
