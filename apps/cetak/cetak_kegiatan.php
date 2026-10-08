@@ -249,6 +249,9 @@ foreach ($dates as $date) {
                 $activity_lines[] = '- ' . $activity_name;
             }
             $place = trim((string) ($activity['tempat'] ?? ''));
+            if ($place === '') {
+                $place = trim((string) ($student['perusahaan'] ?? ''));
+            }
             if ($place !== '' && !in_array($place, $place_lines, true)) {
                 $place_lines[] = $place;
             }
