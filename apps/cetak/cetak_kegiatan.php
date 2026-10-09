@@ -296,7 +296,7 @@ foreach ($dates as $date) {
     $wrapped_values = [];
     $line_count = 1;
     foreach ($values as $index => $value) {
-        $wrapped_values[$index] = $wrap_text($value, $column_widths[$index] - 4);
+        $wrapped_values[$index] = $wrap_text($value, $column_widths[$index] - 6);
         $line_count = max($line_count, substr_count($wrapped_values[$index], "\n") + 1);
     }
     $row_height = max(9, $line_count * 5);
@@ -309,8 +309,11 @@ foreach ($dates as $date) {
     $x = $table_x;
     foreach ($wrapped_values as $index => $value) {
         $pdf->Rect($x, $row_y, $column_widths[$index], $row_height);
-        $pdf->SetXY($x + 2, $row_y + max(1, ($row_height - ($line_count * 5)) / 2));
-        $pdf->MultiCell($column_widths[$index] - 4, 5, $value, 0, 'L');
+        $lines = explode("\n", $value);
+        $text_offset = max(1, ($row_height - ($line_count * 5)) / 2);
+        foreach ($lines as $line_index => $line) {
+            $pdf->Text($x + 2, $row_y + $text_offset + 4 + ($line_index * 5), $line);
+        }
         $x += $column_widths[$index];
     }
     $pdf->SetXY($table_x, $row_y + $row_height);
