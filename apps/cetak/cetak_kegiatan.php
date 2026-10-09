@@ -194,8 +194,7 @@ $pdf->SetY(27);
 $pdf->SetFont('Arial', 'B', 14);
 $pdf->Cell(0, 7, 'LAPORAN HASIL PRAKTIK KERJA LAPANGAN', 0, 1, 'C');
 $pdf->Cell(0, 7, 'SISWA PKL ' . strtoupper($pdf_text($site['nama_instansi'] ?? '')), 0, 1, 'C');
-$pdf->SetFillColor(255, 255, 0);
-$pdf->Cell(0, 7, strtoupper($pdf_text($student['perusahaan'] ?? '')), 0, 1, 'C', true);
+$pdf->Cell(0, 7, strtoupper($pdf_text($student['perusahaan'] ?? '')), 0, 1, 'C');
 $pdf->Ln(11);
 
 $pdf->SetFont('Arial', '', 11);
@@ -208,12 +207,11 @@ foreach ($student_rows as [$label, $value]) {
     $pdf->SetX(25);
     $pdf->Cell(63, 8, $label, 0, 0, 'L');
     $pdf->Cell(5, 8, ':', 0, 0, 'C');
-    $pdf->SetFillColor(255, 255, 0);
     $value_width = min(
         $pdf->GetPageWidth() - 25 - 63 - 5 - 25,
         max(1, $pdf->GetStringWidth($value) + 2)
     );
-    $pdf->Cell($value_width, 8, $value, 0, 1, 'L', true);
+    $pdf->Cell($value_width, 8, $value, 0, 1, 'L');
 }
 $pdf->Ln(9);
 
@@ -299,7 +297,8 @@ foreach ($dates as $date) {
         $wrapped_values[$index] = $wrap_text($value, $column_widths[$index] - 6);
         $line_count = max($line_count, substr_count($wrapped_values[$index], "\n") + 1);
     }
-    $row_height = max(9, $line_count * 5);
+    $line_height = 5.5;
+    $row_height = max(9, ($line_count * $line_height) + 3);
     if ($pdf->GetY() + $row_height > 267) {
         $pdf->AddPage();
         $draw_table_header();
@@ -310,19 +309,22 @@ foreach ($dates as $date) {
     foreach ($wrapped_values as $index => $value) {
         $pdf->Rect($x, $row_y, $column_widths[$index], $row_height);
         $lines = explode("\n", $value);
-        $text_offset = max(1, ($row_height - ($line_count * 5)) / 2);
+        $text_offset = max(1, ($row_height - ($line_count * $line_height)) / 2);
         foreach ($lines as $line_index => $line) {
-            $pdf->Text($x + 2, $row_y + $text_offset + 4 + ($line_index * 5), $line);
+            $pdf->Text($x + 2, $row_y + $text_offset + 4 + ($line_index * $line_height), $line);
         }
         $x += $column_widths[$index];
     }
     $pdf->SetXY($table_x, $row_y + $row_height);
 }
 
-if ($pdf->GetY() > 179) {
+$signature_height = 48;
+$signature_top = $pdf->GetY() + 8;
+$signature_bottom_limit = 270;
+if ($signature_top + $signature_height > $signature_bottom_limit) {
     $pdf->AddPage();
+    $signature_top = 45;
 }
-$signature_top = 183;
 $pdf->SetXY(25, $signature_top);
 $pdf->SetFont('Arial', '', 11);
 $pdf->Cell(160, 8, 'Mengetahui,', 0, 1, 'C');
@@ -345,18 +347,15 @@ foreach ($signature_columns as $index => [$label, $name, $image]) {
             $pdf->Image(
                 $image_path,
                 $x + (($signature_width - $image_width) / 2),
-                $signature_top + 28 + ((15 - $image_height) / 2),
+                $signature_top + 20 + ((12 - $image_height) / 2),
                 $image_width,
                 $image_height
             );
         }
     }
-    $pdf->SetXY($x, $signature_top + 61);
-    $pdf->SetFillColor(255, 255, 0);
+    $pdf->SetXY($x, $signature_top + 40);
     $signature_name = $pdf_text($name);
-    $name_width = min($signature_width, max(1, $pdf->GetStringWidth($signature_name) + 2));
-    $pdf->SetX($x + (($signature_width - $name_width) / 2));
-    $pdf->Cell($name_width, 7, $signature_name, 0, 0, 'C', $name !== '');
+    $pdf->Cell($signature_width, 7, $signature_name, 0, 0, 'C');
 }
 
 $safe_name = preg_replace('/[^A-Za-z0-9_-]+/', '-', (string) $student['nama']);
