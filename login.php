@@ -97,7 +97,8 @@ function input($data)
 // Jika form disubmit
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $username = input($_POST["username"]);
-    $password = md5(input($_POST["password"])); // langsung di-md5 tanpa input() dua kali
+    $plain_password = isset($_POST["password"]) ? (string) $_POST["password"] : '';
+    $password = md5(input($plain_password));
 
     // ==================== Cek Admin ====================
     $sql_admin = "SELECT * FROM tbl_user p
@@ -118,19 +119,55 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $result_siswa = $stmt_siswa->get_result();
 
     // ==================== Login Berhasil ====================
+    $authenticated_user = null;
+    $authenticated_as_student = false;
     if ($result_admin->num_rows > 0) {
-        $row = $result_admin->fetch_assoc();
-        setLoginSession($row);
-        rememberLogin($kon, $row['id_user']);
-
-        header("Location:index.php?page=beranda");
-        exit;
+        $authenticated_user = $result_admin->fetch_assoc();
     } elseif ($result_siswa->num_rows > 0) {
-        $row = $result_siswa->fetch_assoc();
-        setLoginSession($row, true);
-        rememberLogin($kon, $row['id_user']);
+        $authenticated_user = $result_siswa->fetch_assoc();
+        $authenticated_as_student = true;
+    } elseif ($plain_password !== '') {
+        $secure_admin = $kon->prepare("SELECT * FROM tbl_user p INNER JOIN tbl_admin k ON k.kode_admin=p.kode_pengguna WHERE username=? LIMIT 1");
+        if ($secure_admin) {
+            $secure_admin->bind_param("s", $username);
+            $secure_admin->execute();
+            $candidate = $secure_admin->get_result()->fetch_assoc();
+            $secure_admin->close();
+            if ($candidate && password_verify($plain_password, $candidate['password'])) {
+                $authenticated_user = $candidate;
+            }
+        }
+        if (!$authenticated_user) {
+            $secure_student = $kon->prepare("SELECT * FROM tbl_user p INNER JOIN tbl_siswa m ON m.kode_siswa=p.kode_pengguna WHERE username=? LIMIT 1");
+            if ($secure_student) {
+                $secure_student->bind_param("s", $username);
+                $secure_student->execute();
+                $candidate = $secure_student->get_result()->fetch_assoc();
+                $secure_student->close();
+                if ($candidate && password_verify($plain_password, $candidate['password'])) {
+                    $authenticated_user = $candidate;
+                    $authenticated_as_student = true;
+                }
+            }
+        }
+    }
 
-        header("Location:index.php?page=verify_lokasi");
+    if ($authenticated_user) {
+        if (preg_match('/^[a-f0-9]{32}$/i', (string) $authenticated_user['password']) === 1) {
+            $upgraded_password = password_hash($plain_password, PASSWORD_DEFAULT);
+            if ($upgraded_password !== false) {
+                $upgrade = $kon->prepare("UPDATE tbl_user SET password=? WHERE id_user=?");
+                if ($upgrade) {
+                    $upgrade->bind_param("si", $upgraded_password, $authenticated_user['id_user']);
+                    $upgrade->execute();
+                    $upgrade->close();
+                }
+            }
+        }
+        session_regenerate_id(true);
+        setLoginSession($authenticated_user, $authenticated_as_student);
+        rememberLogin($kon, $authenticated_user['id_user']);
+        header($authenticated_as_student ? "Location:index.php?page=verify_lokasi" : "Location:index.php?page=beranda");
         exit;
     } else {
         $pesan = "<div class='alert alert-danger'>Username atau Password salah.</div>";

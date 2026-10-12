@@ -1,86 +1,86 @@
 <?php
 session_start();
-if (isset($_POST['submit'])) {
 
-    //Menghubungkan ke database
-    include '../../config/database.php';
-
-    //Fungsi untuk mencegah inputan karakter yang tidak sesuai
-    function input($data)
-    {
-        $data = trim($data);
-        $data = stripslashes($data);
-        $data = htmlspecialchars($data);
-        return $data;
-    }
-
-    //Cek apakah ada kiriman form dari method post
-    if ($_SERVER["REQUEST_METHOD"] == "POST") {
-        //Memulai transaksi
-        mysqli_query($kon, "START TRANSACTION");
-
-        //Mendapatkan kode_siswa dari AJAX
-        $kode_siswa = input($_POST["kode_siswa"]);
-
-        //Mendapatkan input password dari form lalu di enkripsi menjadi md5
-        $password = md5(input($_POST["password"]));
-
-        //Query untuk update password dari tbl_user
-        $sql = "UPDATE tbl_user SET password='$password' WHERE kode_pengguna='$kode_siswa'";
-
-        //Menyimpan password ke tbl_user
-        $password = mysqli_query($kon, $sql);
-
-        //Jika password berhasil di update maka halaman beralih logout
-        if ($password) {
-            mysqli_query($kon, "COMMIT");
-            header("Location:../../logout.php");
-        }
-        //Jika password gagal di update maka halaman beralih ke profil
-        else {
-            mysqli_query($kon, "ROLLBACK");
-            header("Location:../../index.php?page=profil&password=gagal");
-        }
-    }
+if (
+    strtolower(isset($_SESSION['level']) ? (string) $_SESSION['level'] : '') !== 'siswa' ||
+    empty($_SESSION['kode_pengguna'])
+) {
+    http_response_code(403);
+    exit('Akses tidak diizinkan.');
 }
+
+require_once '../../config/database.php';
+$session_code = (string) $_SESSION['kode_pengguna'];
+$csrf_token = isset($_SESSION['csrf_self_password'])
+    ? $_SESSION['csrf_self_password']
+    : bin2hex(random_bytes(32));
+$_SESSION['csrf_self_password'] = $csrf_token;
+
+if (isset($_POST['submit'])) {
+    if (!hash_equals($csrf_token, isset($_POST['csrf_token']) ? (string) $_POST['csrf_token'] : '')) {
+        http_response_code(400);
+        exit('Permintaan tidak valid. Muat ulang halaman lalu coba kembali.');
+    }
+
+    $posted_code = trim(isset($_POST['kode_siswa']) ? (string) $_POST['kode_siswa'] : '');
+    $new_password = isset($_POST['password']) ? (string) $_POST['password'] : '';
+    if (!hash_equals($session_code, $posted_code) || strlen($new_password) < 12 || strlen($new_password) > 255) {
+        header('Location:../../index.php?page=profil&pengguna=gagal');
+        exit;
+    }
+
+    $password_hash = password_hash($new_password, PASSWORD_DEFAULT);
+    if ($password_hash === false) {
+        http_response_code(500);
+        exit('Password tidak dapat diproses.');
+    }
+    $update_statement = mysqli_prepare(
+        $kon,
+        'UPDATE tbl_user SET password = ?, remember_token_hash = NULL WHERE kode_pengguna = ? AND LOWER(level) = ?'
+    );
+    if (!$update_statement) {
+        header('Location:../../index.php?page=profil&pengguna=gagal');
+        exit;
+    }
+    $level = 'siswa';
+    mysqli_stmt_bind_param($update_statement, 'sss', $password_hash, $session_code, $level);
+    $updated = mysqli_stmt_execute($update_statement);
+    mysqli_stmt_close($update_statement);
+
+    if ($updated) {
+        header('Location:../../logout.php');
+    } else {
+        header('Location:../../index.php?page=profil&pengguna=gagal');
+    }
+    exit;
+}
+
+$posted_code = trim(isset($_POST['kode_siswa']) ? (string) $_POST['kode_siswa'] : '');
+if (!hash_equals($session_code, $posted_code)) {
+    http_response_code(403);
+    exit('Anda hanya dapat mengubah password akun sendiri.');
+}
+$escape = static function ($value) {
+    return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+};
 ?>
 
 <form action="apps/pengguna/ubah_password.php" method="post">
-
-    <div class="row">
-        <div class="col-sm-7">
-            <div class="form-group">
-                <!-- Menyimpan kode_siswa dari AJAX -->
-                <input name="kode_siswa" type="hidden" id="kode_siswa" class="form-control" value="<?php echo $_POST['kode_siswa']; ?>" />
-                <!-- Menyimpan kode_siswa dari AJAX -->
-            </div>
-        </div>
-    </div>
-
+    <input name="kode_siswa" type="hidden" value="<?php echo $escape($session_code); ?>">
+    <input name="csrf_token" type="hidden" value="<?php echo $escape($csrf_token); ?>">
     <div class="row">
         <div class="col-sm-6">
             <div class="form-group">
-                <label>Password :</label>
-                <input name="password" type="password" class="form-control" value="" placeholder="Ganti Password?" required>
+                <label>Password baru (minimal 12 karakter) :</label>
+                <input name="password" type="password" class="form-control" minlength="12" maxlength="255" required autocomplete="new-password">
             </div>
         </div>
     </div>
-
-    <div class="row">
-        <div class="col-sm-4">
-            <button type="submit" name="submit" id="submit" class="btn-password btn btn-primary"><i class="fa fa-key"></i> Simpan</button>
-        </div>
-    </div>
+    <button type="submit" name="submit" class="btn-password btn btn-primary"><i class="fa fa-key"></i> Simpan</button>
 </form>
 
 <script>
-    // fungsi mengubah password
     $('.btn-password').on('click', function() {
-        konfirmasi = confirm("Konfirmasi mengubah Password?")
-        if (konfirmasi) {
-            return true;
-        } else {
-            return false;
-        }
+        return confirm("Konfirmasi mengubah password?");
     });
 </script>

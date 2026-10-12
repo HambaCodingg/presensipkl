@@ -3,6 +3,10 @@ if ($_SESSION["level"] != 'Admin' and $_SESSION["level"] != 'admin') {
     echo "<br><div class='alert alert-danger'>Tidak memiliki Hak Akses</div>";
     exit;
 }
+$csrf_admin_action = isset($_SESSION['csrf_admin_action'])
+    ? $_SESSION['csrf_admin_action']
+    : bin2hex(random_bytes(32));
+$_SESSION['csrf_admin_action'] = $csrf_admin_action;
 ?>
 
 <div class="row">
@@ -98,7 +102,12 @@ if ($_SESSION["level"] != 'Admin' and $_SESSION["level"] != 'admin') {
                                     <td>
                                         <button kode_admin="<?php echo $data['kode_admin']; ?>" class="tombol_setting_pengguna btn btn-primary btn-circle"><i class="fa fa-user"></i></button>
                                         <button id_admin="<?php echo $data['id_admin']; ?>" class="tombol_edit btn btn-warning btn-circle"><i class="fa fa-edit"></i></button>
-                                        <a href="apps/admin/hapus.php?id_admin=<?php echo $data['id_admin']; ?>&kode_admin=<?php echo $data['kode_admin']; ?>" class="btn-hapus-admin btn btn-danger btn-circle"><i class="fa fa-trash"></i></a>
+                                        <form action="apps/admin/hapus.php" method="post" style="display:inline;" onsubmit="return confirm('Konfirmasi sebelum menghapus administrator?');">
+                                            <input type="hidden" name="id_admin" value="<?php echo (int) $data['id_admin']; ?>">
+                                            <input type="hidden" name="kode_admin" value="<?php echo htmlspecialchars($data['kode_admin'], ENT_QUOTES, 'UTF-8'); ?>">
+                                            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_admin_action, ENT_QUOTES, 'UTF-8'); ?>">
+                                            <button type="submit" class="btn btn-danger btn-circle" aria-label="Hapus administrator"><i class="fa fa-trash"></i></button>
+                                        </form>
                                     </td>
                                 </tr>
                                 <!-- bagian akhir (penutup) while -->
@@ -193,15 +202,4 @@ if ($_SESSION["level"] != 'Admin' and $_SESSION["level"] != 'admin') {
     });
 </script>
 
-<script>
-    // Hapus admin
-    $('.btn-hapus-admin').on('click', function() {
-        konfirmasi = confirm("Konfirmasi Sebelum Menghapus Administator?")
-        if (konfirmasi) {
-            return true;
-        } else {
-            return false;
-        }
-    });
-</script>
 <!-- Data akan di load menggunakan AJAX -->
