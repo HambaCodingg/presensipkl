@@ -1,5 +1,10 @@
 <?php
 session_start();
+if (strtolower(isset($_SESSION['level']) ? (string) $_SESSION['level'] : '') !== 'admin') {
+    http_response_code(403);
+    exit('Akses tidak diizinkan.');
+}
+
 if (isset($_POST['tambah_admin'])) {
 
     //Menghubungkan ke database

@@ -350,7 +350,7 @@ function BarisKegiatan($string_kegiatan)
     $max_kegiatan = count($kegiatan);
     for ($i = 0; $i < $max_kegiatan; $i++) {
         echo $no1 . ". ";
-        echo $kegiatan[$i] . " </br>";
+        echo htmlspecialchars($kegiatan[$i], ENT_QUOTES, 'UTF-8') . " </br>";
         $no1++;
     }
 }

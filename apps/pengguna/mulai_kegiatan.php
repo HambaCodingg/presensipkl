@@ -1,29 +1,38 @@
 <?php
 session_start();
+if (
+    strtolower(isset($_SESSION['level']) ? (string) $_SESSION['level'] : '') !== 'siswa' ||
+    empty($_SESSION['id_siswa'])
+) {
+    http_response_code(403);
+    exit('Akses tidak diizinkan.');
+}
+
 if (isset($_POST['simpan_kegiatan'])) {
 
     include '../../config/database.php';
-    function input($data)
-    {
-        $data = trim($data);
-        $data = stripslashes($data);
-        $data = htmlspecialchars($data);
-        return $data;
-    }
 
     $id_siswa = $_SESSION["id_siswa"];
     date_default_timezone_set("Asia/Jakarta");
-    $kegiatan = $_POST["kegiatan"];
-    $waktu_awal = $_POST["waktu_awal"];
-    $waktu_akhir = $_POST["waktu_akhir"];
-    $tempat = mysqli_real_escape_string($kon, trim($_POST["tempat"]));
+    $kegiatan = trim(isset($_POST["kegiatan"]) ? (string) $_POST["kegiatan"] : '');
+    $waktu_awal = isset($_POST["waktu_awal"]) ? (string) $_POST["waktu_awal"] : '';
+    $waktu_akhir = isset($_POST["waktu_akhir"]) ? (string) $_POST["waktu_akhir"] : '';
+    $tempat = trim(isset($_POST["tempat"]) ? (string) $_POST["tempat"] : '');
     $tanggal = date("Y-m-d");
     if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
-        $sql = "INSERT INTO tbl_kegiatan (id_siswa,kegiatan,tempat,waktu_awal,waktu_akhir,tanggal)
-        VALUES ('$id_siswa','$kegiatan','$tempat','$waktu_awal','$waktu_akhir','$tanggal')";
-
-        $simpan_kegiatan = mysqli_query($kon, $sql);
+        $statement = mysqli_prepare(
+            $kon,
+            'INSERT INTO tbl_kegiatan (id_siswa, kegiatan, tempat, waktu_awal, waktu_akhir, tanggal)
+             VALUES (?, ?, ?, ?, ?, ?)'
+        );
+        if ($statement) {
+            mysqli_stmt_bind_param($statement, 'isssss', $id_siswa, $kegiatan, $tempat, $waktu_awal, $waktu_akhir, $tanggal);
+            $simpan_kegiatan = mysqli_stmt_execute($statement);
+            mysqli_stmt_close($statement);
+        } else {
+            $simpan_kegiatan = false;
+        }
 
 
         // validasi data

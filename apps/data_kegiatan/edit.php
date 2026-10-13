@@ -63,12 +63,15 @@ $waktu_akhir = $row['waktu_akhir'];
 $tanggal = $row['tanggal'];
 $kegiatan = $row['kegiatan'];
 $tempat = $row['tempat'] ?? '';
+$escape = static function ($value) {
+    return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+};
 ?>
 
 <form action="apps/data_kegiatan/edit.php" method="post" enctype="multipart/form-data">
     <div class="row">
-        <input type="hidden" name="id_siswa" value="<?php echo $_POST['id_siswa']; ?>">
-        <input type="hidden" name="id_kegiatan" value="<?php echo $_POST['id_kegiatan']; ?>">
+        <input type="hidden" name="id_siswa" value="<?php echo (int) $_POST['id_siswa']; ?>">
+        <input type="hidden" name="id_kegiatan" value="<?php echo (int) $_POST['id_kegiatan']; ?>">
         <div class="col-sm-6">
             <div class="form-group">
                 <label>Tanggal Kegiatan :</label>
@@ -90,7 +93,7 @@ $tempat = $row['tempat'] ?? '';
         <div class="col-sm-12">
             <div class="form-group">
                 <label>Kegiatan :</label>
-                <input type="text" name="kegiatan" id="kegiatan" class="form-control" value="<?php echo $kegiatan; ?>" placeholder="Masukkan Kegiatan Harian">
+                <input type="text" name="kegiatan" id="kegiatan" class="form-control" value="<?php echo $escape($kegiatan); ?>" placeholder="Masukkan Kegiatan Harian">
             </div>
         </div>
         <div class="col-sm-12">

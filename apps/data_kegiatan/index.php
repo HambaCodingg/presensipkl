@@ -143,7 +143,7 @@ if ($_SESSION["level"] != 'Admin' and $_SESSION["level"] != 'admin') {
                                         ?>
                                     </td>
                                     <td><?php echo $data['waktu']; ?></td>
-                                    <td><?php echo $data['kegiatan']; ?></td>
+                                    <td><?php echo htmlspecialchars((string) $data['kegiatan'], ENT_QUOTES, 'UTF-8'); ?></td>
                                     <td><?php echo htmlspecialchars($data['tempat'] ?? '-', ENT_QUOTES, 'UTF-8'); ?></td>
                                     <td>
                                         <button id_siswa="<?php echo $data['id_siswa']; ?>" id_kegiatan="<?php echo $data['id_kegiatan']; ?>" class="ubah_kegiatan cetak btn btn-warning"><i class="fa fa-edit"></i></button>
